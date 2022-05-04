@@ -32,8 +32,8 @@ contract SimpleDeal is Auth {
     address public payoutAddress;
     string public metadataHash;
 
-    // @notice itemStatuses enum
-    enum itemStatuses {
+    // @notice Status enum
+    enum Status {
         Open,
         Done,
         Disputed,
@@ -42,15 +42,15 @@ contract SimpleDeal is Auth {
     }
 
     /// @param dealStruct The deal object.
-    /// @param status Coming from itemStatuses enum.
+    /// @param status Coming from Status enum.
     /// Statuses: Open, Done, Disputed, Resolved, Cancelled
     /// @param hashtagFee The value of the hashtag fee is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtag fee.
     /// @param dealValue The value of the deal (SWT)
     /// @param provider The address of the provider
     /// @param deals Array of deals made by this hashtag
 
-    struct itemStruct {
-        itemStatuses status;
+    struct Item {
+        Status status;
         uint256 hashtagFee;
         uint256 itemValue;
         uint256 providerRep;
@@ -60,7 +60,7 @@ contract SimpleDeal is Auth {
         string ipfsMetadata;
     }
 
-    mapping(bytes32 => itemStruct) items;
+    mapping(bytes32 => Item) items;
 
     /// @dev Event Seeker reputation token is minted and sent
     event SeekerRepAdded(address to, uint256 amount);
@@ -86,7 +86,7 @@ contract SimpleDeal is Auth {
     event ItemStatusChange(
         address owner,
         bytes32 itemHash,
-        itemStatuses newstatus,
+        Status newstatus,
         string ipfsMetadata
     );
 
@@ -196,8 +196,8 @@ contract SimpleDeal is Auth {
         require(token.transfer(payoutAddress, hashtagFee / 2));
 
         // if it's funded - fill in the details
-        items[_itemHash] = itemStruct(
-            itemStatuses.Open,
+        items[_itemHash] = Item(
+            Status.Open,
             hashtagFee,
             _itemValue,
             0,
@@ -222,10 +222,10 @@ contract SimpleDeal is Auth {
     function fundItem(string calldata _itemId) public {
         bytes32 itemHash = keccak256(abi.encodePacked(_itemId));
 
-        itemStruct storage c = items[itemHash];
+        Item storage c = items[itemHash];
 
         /// @dev only allow open deals to be funded
-        require(c.status == itemStatuses.Open);
+        require(c.status == Status.Open);
 
         /// @dev if the provider is filled in - the deal was already funded
         require(c.providerAddress == address(0));
@@ -256,13 +256,13 @@ contract SimpleDeal is Auth {
 
     /// @notice The payout function can only be called by the deal owner.
     function payoutItem(bytes32 _itemHash) public {
-        itemStruct storage c = items[_itemHash];
+        Item storage c = items[_itemHash];
 
         /// @dev Only Seeker can payout
         require(c.seekerAddress == msg.sender);
 
         /// @dev you can only payout open deals
-        require(c.status == itemStatuses.Open);
+        require(c.status == Status.Open);
 
         /// @dev pay out the provider
         require(token.transfer(c.providerAddress, c.itemValue * 2));
@@ -276,11 +276,11 @@ contract SimpleDeal is Auth {
         emit SeekerRepAdded(c.seekerAddress, 5);
 
         /// @dev mark the deal as done
-        items[_itemHash].status = itemStatuses.Done;
+        items[_itemHash].status = Status.Done;
         emit ItemStatusChange(
             c.seekerAddress,
             _itemHash,
-            itemStatuses.Done,
+            Status.Done,
             c.ipfsMetadata
         );
     }
@@ -288,21 +288,21 @@ contract SimpleDeal is Auth {
     /// @notice The Cancel Item Function
     /// @notice Half of the HashtagFee is sent to PayoutAddress
     function cancelItem(bytes32 _itemHash) public {
-        itemStruct storage c = items[_itemHash];
+        Item storage c = items[_itemHash];
         if (
             c.itemValue > 0 &&
             c.providerAddress == address(0) &&
-            c.status == itemStatuses.Open
+            c.status == Status.Open
         ) {
             // @dev The Seeker gets the remaining value
             require(token.transfer(c.seekerAddress, c.itemValue));
 
-            items[_itemHash].status = itemStatuses.Cancelled;
+            items[_itemHash].status = Status.Cancelled;
 
             emit ItemStatusChange(
                 msg.sender,
                 _itemHash,
-                itemStatuses.Cancelled,
+                Status.Cancelled,
                 c.ipfsMetadata
             );
         }
@@ -311,8 +311,8 @@ contract SimpleDeal is Auth {
     /// @notice The Dispute Item Function
     /// @notice The Seeker or Provider can dispute an item, only the Maintainer can resolve it.
     function disputeItem(bytes32 _itemHash) public {
-        itemStruct storage c = items[_itemHash];
-        require(c.status == itemStatuses.Open, "item not open");
+        Item storage c = items[_itemHash];
+        require(c.status == Status.Open, "item not open");
 
         if (msg.sender == c.seekerAddress) {
             /// @dev Seeker starts the dispute
@@ -323,11 +323,11 @@ contract SimpleDeal is Auth {
             require(c.providerAddress == msg.sender, "sender is provider");
         }
         /// @dev Set itemStatus to Disputed
-        items[_itemHash].status = itemStatuses.Disputed;
+        items[_itemHash].status = Status.Disputed;
         emit ItemStatusChange(
             msg.sender,
             _itemHash,
-            itemStatuses.Disputed,
+            Status.Disputed,
             c.ipfsMetadata
         );
     }
@@ -335,19 +335,19 @@ contract SimpleDeal is Auth {
     /// @notice The Resolve Item Function ♡
     /// @notice The Maintainer resolves the disputed item.
     function resolveItem(bytes32 _itemHash, uint256 _seekerFraction) public {
-        itemStruct storage c = items[_itemHash];
+        Item storage c = items[_itemHash];
         require(msg.sender == payoutAddress);
-        require(c.status == itemStatuses.Disputed);
+        require(c.status == Status.Disputed);
         require(token.transfer(c.seekerAddress, _seekerFraction));
         require(c.itemValue * 2 - _seekerFraction <= c.itemValue * 2);
         require(
             token.transfer(c.providerAddress, c.itemValue * 2 - _seekerFraction)
         );
-        items[_itemHash].status = itemStatuses.Resolved;
+        items[_itemHash].status = Status.Resolved;
         emit ItemStatusChange(
             c.seekerAddress,
             _itemHash,
-            itemStatuses.Resolved,
+            Status.Resolved,
             c.ipfsMetadata
         );
     }
@@ -356,7 +356,7 @@ contract SimpleDeal is Auth {
     function readDeal(bytes32 _itemHash)
         public
         view
-        returns (itemStruct memory item)
+        returns (Item memory item)
     {
         return items[_itemHash];
     }
