@@ -41,13 +41,13 @@ contract SimpleDeal is Auth {
         Cancelled
     }
 
-    /// @param_dealStruct The deal object.
-    /// @param_status Coming from itemStatuses enum.
+    /// @param dealStruct The deal object.
+    /// @param status Coming from itemStatuses enum.
     /// Statuses: Open, Done, Disputed, Resolved, Cancelled
-    /// @param_hashtagFee The value of the hashtag fee is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtag fee.
-    /// @param_dealValue The value of the deal (SWT)
-    /// @param_provider The address of the provider
-    /// @param_deals Array of deals made by this hashtag
+    /// @param hashtagFee The value of the hashtag fee is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtag fee.
+    /// @param dealValue The value of the deal (SWT)
+    /// @param provider The address of the provider
+    /// @param deals Array of deals made by this hashtag
 
     struct itemStruct {
         itemStatuses status;
