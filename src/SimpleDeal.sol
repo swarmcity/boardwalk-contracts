@@ -57,7 +57,7 @@ contract SimpleDeal is Auth {
         uint256 seekerRep;
         address providerAddress;
         address seekerAddress;
-        string ipfsMetadata;
+        string metadata;
     }
 
     mapping(bytes32 => Item) items;
@@ -66,7 +66,7 @@ contract SimpleDeal is Auth {
     event NewItemForTwo(
         address owner,
         bytes32 itemHash,
-        string ipfsMetadata,
+        string metadata,
         uint256 itemValue,
         uint256 hashtagFee,
         uint256 totalValue,
@@ -81,7 +81,7 @@ contract SimpleDeal is Auth {
         address owner,
         bytes32 itemHash,
         Status newstatus,
-        string ipfsMetadata
+        string metadata
     );
 
     /// @dev ReceivedApproval - This event is fired when minime sends approval.
@@ -100,7 +100,7 @@ contract SimpleDeal is Auth {
         address _token,
         string memory _hashtagName,
         uint256 _hashtagFee,
-        string memory _ipfsMetadataHash
+        string memory _metadataHash
     ) Auth(msg.sender, Authority(address(0))) {
         /// @notice The name of the hashtag is set
         hashtagName = _hashtagName;
@@ -115,7 +115,7 @@ contract SimpleDeal is Auth {
         token = ERC20(_token);
 
         /// Metadata added
-        metadataHash = _ipfsMetadataHash;
+        metadataHash = _metadataHash;
 
         /// hashtag fee is set to ...
         hashtagFee = _hashtagFee;
@@ -142,11 +142,11 @@ contract SimpleDeal is Auth {
     }
 
     /// @notice The Hashtag owner can always update the metadata for the hashtag.
-    function setMetadataHash(string calldata _ipfsMetadataHash)
+    function setMetadataHash(string calldata _metadataHash)
         public
         requiresAuth
     {
-        metadataHash = _ipfsMetadataHash;
+        metadataHash = _metadataHash;
         emit HashtagChanged("MetaData hash changed");
     }
 
@@ -162,7 +162,7 @@ contract SimpleDeal is Auth {
     function newItem(
         bytes32 _itemHash,
         uint256 _itemValue,
-        string calldata _ipfsMetadata
+        string calldata _metadata
     ) public {
         // make sure there is enough to pay the hashtag fee later on
         require(hashtagFee / 2 <= _itemValue); // Overflow protection
@@ -198,13 +198,13 @@ contract SimpleDeal is Auth {
             SeekerRep.balanceOf(tx.origin),
             address(0),
             tx.origin,
-            _ipfsMetadata
+            _metadata
         );
 
         emit NewItemForTwo(
             tx.origin,
             _itemHash,
-            _ipfsMetadata,
+            _metadata,
             _itemValue,
             hashtagFee,
             totalValue,
@@ -273,7 +273,7 @@ contract SimpleDeal is Auth {
             c.seekerAddress,
             _itemHash,
             Status.Done,
-            c.ipfsMetadata
+            c.metadata
         );
     }
 
@@ -295,7 +295,7 @@ contract SimpleDeal is Auth {
                 msg.sender,
                 _itemHash,
                 Status.Cancelled,
-                c.ipfsMetadata
+                c.metadata
             );
         }
     }
@@ -320,7 +320,7 @@ contract SimpleDeal is Auth {
             msg.sender,
             _itemHash,
             Status.Disputed,
-            c.ipfsMetadata
+            c.metadata
         );
     }
 
@@ -340,7 +340,7 @@ contract SimpleDeal is Auth {
             c.seekerAddress,
             _itemHash,
             Status.Resolved,
-            c.ipfsMetadata
+            c.metadata
         );
     }
 
