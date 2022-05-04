@@ -62,12 +62,6 @@ contract SimpleDeal is Auth {
 
     mapping(bytes32 => Item) items;
 
-    /// @dev Event Seeker reputation token is minted and sent
-    event SeekerRepAdded(address to, uint256 amount);
-
-    /// @dev Event Provider reputation token is minted and sent
-    event ProviderRepAdded(address to, uint256 amount);
-
     /// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
     event NewItemForTwo(
         address owner,
@@ -269,11 +263,9 @@ contract SimpleDeal is Auth {
 
         /// @dev mint REP for Provider
         ProviderRep.mint(c.providerAddress, 5);
-        emit ProviderRepAdded(c.providerAddress, 5);
 
         /// @dev mint REP for Seeker
         SeekerRep.mint(c.seekerAddress, 5);
-        emit SeekerRepAdded(c.seekerAddress, 5);
 
         /// @dev mark the deal as done
         items[_itemHash].status = Status.Done;
