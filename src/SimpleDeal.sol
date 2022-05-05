@@ -108,26 +108,15 @@ contract SimpleDeal is Auth {
         uint256 _hashtagFee,
         string memory _metadataHash
     ) Auth(msg.sender, Authority(address(0))) {
-        /// @notice The name of the hashtag is set
-        hashtagName = _hashtagName;
-
-        /// @notice The seeker reputation token is created
+        // Create reputation tokens
         SeekerRep = new MintableERC20("SeekerRep", "SWRS", 0);
-
-        /// @notice The provider reputation token is created
         ProviderRep = new MintableERC20("ProviderRep", "SWRP", 0);
 
-        /// @notice SWT token is added
+        // Global config
+        hashtagName = _hashtagName;
         token = ERC20(_token);
-
-        /// Metadata added
         metadataHash = _metadataHash;
-
-        /// hashtag fee is set to ...
         hashtagFee = _hashtagFee;
-
-        /// Hashtag fee payout address is set
-        /// First time we set it to msg.sender
         payoutAddress = msg.sender;
     }
 
