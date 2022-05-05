@@ -92,8 +92,14 @@ contract SimpleDeal is Auth {
         bytes extraData
     );
 
-    /// @dev hashtagChanged - This event is fired when any of the metadata is changed.
-    event HashtagChanged(string _change);
+    /// @dev hashtagChanged - This event is fired when the payout address is changed.
+    event SetPayoutAddress(address payoutAddress);
+
+    /// @dev hashtagChanged - This event is fired when the metadata hash is changed.
+    event SetMetadataHash(string metadataHash);
+
+    /// @dev hashtagChanged - This event is fired when the hashtag fee is changed.
+    event SetHashtagFee(uint256 hashtagFee);
 
     /// @notice The function that creates the hashtag
     constructor(
@@ -138,7 +144,7 @@ contract SimpleDeal is Auth {
     /// @notice The Hashtag owner can always update the payout address.
     function setPayoutAddress(address _payoutaddress) public requiresAuth {
         payoutAddress = _payoutaddress;
-        emit HashtagChanged("Payout address changed");
+        emit SetPayoutAddress(payoutAddress);
     }
 
     /// @notice The Hashtag owner can always update the metadata for the hashtag.
@@ -147,13 +153,13 @@ contract SimpleDeal is Auth {
         requiresAuth
     {
         metadataHash = _metadataHash;
-        emit HashtagChanged("MetaData hash changed");
+        emit SetMetadataHash(metadataHash);
     }
 
     /// @notice The Hashtag owner can always change the hashtag fee amount
-    function setHashtagFee(uint256 _newHashtagFee) public requiresAuth {
-        hashtagFee = _newHashtagFee;
-        emit HashtagChanged("Hashtag fee amount changed");
+    function setHashtagFee(uint256 _hashtagFee) public requiresAuth {
+        hashtagFee = _hashtagFee;
+        emit SetHashtagFee(hashtagFee);
     }
 
     /// @notice The item making stuff
