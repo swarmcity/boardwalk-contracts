@@ -84,14 +84,6 @@ contract Hashtag is Auth {
         string metadata
     );
 
-    /// @dev ReceivedApproval - This event is fired when minime sends approval.
-    event ReceivedApproval(
-        address sender,
-        uint256 amount,
-        address fromcontract,
-        bytes extraData
-    );
-
     /// @dev hashtagChanged - This event is fired when the payout address is changed.
     event SetPayoutAddress(address payoutAddress);
 
@@ -118,16 +110,6 @@ contract Hashtag is Auth {
         metadataHash = _metadataHash;
         fee = _fee;
         payoutAddress = msg.sender;
-    }
-
-    function receiveApproval(
-        address _msgsender,
-        uint256 _amount,
-        address _fromcontract,
-        bytes calldata _extraData
-    ) public {
-        //require(address(this).call(_extraData));
-        emit ReceivedApproval(_msgsender, _amount, _fromcontract, _extraData);
     }
 
     /// @notice The Hashtag owner can always update the payout address.
