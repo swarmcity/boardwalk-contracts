@@ -1,0 +1,23 @@
+{
+	"name": "@swarmcity/boardwalk-contracts",
+	"version": "0.0.0",
+	"scripts": {
+		"lint": "prettier -c **.sol",
+		"prettier": "prettier --write **.sol"
+	},
+	"files": [
+		"src/**/*.sol"
+	],
+	"devDependencies": {
+		"prettier": "^2.7.1",
+		"prettier-plugin-solidity": "^1.0.0-beta.19"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/swarmcity/boardwalk-contracts.git"
+	},
+	"bugs": {
+		"url": "https://github.com/swarmcity/boardwalk-contracts/issues"
+	},
+	"homepage": "https://github.com/swarmcity/boardwalk-contracts#readme"
+}
