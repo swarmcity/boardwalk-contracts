@@ -16,19 +16,19 @@ import {Auth, Authority} from "solmate/auth/Auth.sol";
 
 import {MintableERC20} from "./MintableERC20.sol";
 
-contract SimpleDeal is Auth {
-    /// @dev hashtagName The human readable name of the hashtag
-    /// @dev hashtagFee The fixed hashtag fee in SWT
-    /// @dev token The SWT token
-    /// @dev ProviderRep The rep token that is minted for the Provider
-    /// @dev SeekerRep The rep token that is minted for the Seeker
+contract Hashtag is Auth {
+    /// @dev name The human readable name of the hashtag
+    /// @dev fee The fixed hashtag fee in the specified token
+    /// @dev token The token for fees
+    /// @dev providerRep The rep token that is minted for the Provider
+    /// @dev seekerRep The rep token that is minted for the Seeker
     /// @dev payoutaddress The address where the hashtag fee is sent.
     /// @dev metadataHash The IPFS hash metadata for this hashtag
-    string public hashtagName;
-    uint256 public hashtagFee;
+    string public name;
+    uint256 public fee;
     ERC20 public token;
-    MintableERC20 public ProviderRep;
-    MintableERC20 public SeekerRep;
+    MintableERC20 public providerRep;
+    MintableERC20 public seekerRep;
     address public payoutAddress;
     string public metadataHash;
 
@@ -44,14 +44,14 @@ contract SimpleDeal is Auth {
     /// @param dealStruct The deal object.
     /// @param status Coming from Status enum.
     /// Statuses: Open, Done, Disputed, Resolved, Cancelled
-    /// @param hashtagFee The value of the hashtag fee is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtag fee.
+    /// @param fee The value of the hashtag fee is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtag fee.
     /// @param dealValue The value of the deal (SWT)
     /// @param provider The address of the provider
     /// @param deals Array of deals made by this hashtag
 
     struct Item {
         Status status;
-        uint256 hashtagFee;
+        uint256 fee;
         uint256 itemValue;
         uint256 providerRep;
         uint256 seekerRep;
@@ -68,7 +68,7 @@ contract SimpleDeal is Auth {
         bytes32 itemHash,
         string metadata,
         uint256 itemValue,
-        uint256 hashtagFee,
+        uint256 fee,
         uint256 totalValue,
         uint256 seekerRep
     );
@@ -99,24 +99,24 @@ contract SimpleDeal is Auth {
     event SetMetadataHash(string metadataHash);
 
     /// @dev hashtagChanged - This event is fired when the hashtag fee is changed.
-    event SetHashtagFee(uint256 hashtagFee);
+    event Setfee(uint256 fee);
 
     /// @notice The function that creates the hashtag
     constructor(
         address _token,
-        string memory _hashtagName,
-        uint256 _hashtagFee,
+        string memory _name,
+        uint256 _fee,
         string memory _metadataHash
     ) Auth(msg.sender, Authority(address(0))) {
         // Create reputation tokens
-        SeekerRep = new MintableERC20("SeekerRep", "SWRS", 0);
-        ProviderRep = new MintableERC20("ProviderRep", "SWRP", 0);
+        seekerRep = new MintableERC20("SeekerRep", "SWRS", 0);
+        providerRep = new MintableERC20("ProviderRep", "SWRP", 0);
 
         // Global config
-        hashtagName = _hashtagName;
+        name = _name;
         token = ERC20(_token);
         metadataHash = _metadataHash;
-        hashtagFee = _hashtagFee;
+        fee = _fee;
         payoutAddress = msg.sender;
     }
 
@@ -146,9 +146,9 @@ contract SimpleDeal is Auth {
     }
 
     /// @notice The Hashtag owner can always change the hashtag fee amount
-    function setHashtagFee(uint256 _hashtagFee) public requiresAuth {
-        hashtagFee = _hashtagFee;
-        emit SetHashtagFee(hashtagFee);
+    function setFee(uint256 _fee) public requiresAuth {
+        fee = _fee;
+        emit Setfee(fee);
     }
 
     /// @notice The item making stuff
@@ -160,37 +160,31 @@ contract SimpleDeal is Auth {
         string calldata _metadata
     ) public {
         // make sure there is enough to pay the hashtag fee later on
-        require(hashtagFee / 2 <= _itemValue); // Overflow protection
+        require(fee / 2 <= _itemValue); // Overflow protection
 
         // fund this deal
-        uint256 totalValue = _itemValue + hashtagFee / 2;
+        uint256 totalValue = _itemValue + fee / 2;
 
-        require(_itemValue + hashtagFee / 2 >= _itemValue); //overflow protection
+        require(_itemValue + fee / 2 >= _itemValue); //overflow protection
 
         // if deal already exists don't allow to overwrite it
-        require(
-            items[_itemHash].hashtagFee == 0 && items[_itemHash].itemValue == 0
-        );
+        require(items[_itemHash].fee == 0 && items[_itemHash].itemValue == 0);
 
         // @dev The Seeker transfers SWT to the hashtagcontract
         require(
-            token.transferFrom(
-                tx.origin,
-                address(this),
-                _itemValue + hashtagFee / 2
-            )
+            token.transferFrom(tx.origin, address(this), _itemValue + fee / 2)
         );
 
-        // @dev The Seeker pays half of the hashtagFee to the Maintainer
-        require(token.transfer(payoutAddress, hashtagFee / 2));
+        // @dev The Seeker pays half of the fee to the Maintainer
+        require(token.transfer(payoutAddress, fee / 2));
 
         // if it's funded - fill in the details
         items[_itemHash] = Item(
             Status.Open,
-            hashtagFee,
+            fee,
             _itemValue,
             0,
-            SeekerRep.balanceOf(tx.origin),
+            seekerRep.balanceOf(tx.origin),
             address(0),
             tx.origin,
             _metadata
@@ -201,9 +195,9 @@ contract SimpleDeal is Auth {
             _itemHash,
             _metadata,
             _itemValue,
-            hashtagFee,
+            fee,
             totalValue,
-            SeekerRep.balanceOf(tx.origin)
+            seekerRep.balanceOf(tx.origin)
         );
     }
 
@@ -220,21 +214,21 @@ contract SimpleDeal is Auth {
         require(c.providerAddress == address(0));
 
         /// @dev put the tokens from the provider on the deal
-        require(c.itemValue + c.hashtagFee / 2 >= c.itemValue);
+        require(c.itemValue + c.fee / 2 >= c.itemValue);
         require(
             token.transferFrom(
                 tx.origin,
                 address(this),
-                c.itemValue + c.hashtagFee / 2
+                c.itemValue + c.fee / 2
             )
         );
 
-        // @dev The Seeker pays half of the hashtagFee to the Maintainer
-        require(token.transfer(payoutAddress, c.hashtagFee / 2));
+        // @dev The Seeker pays half of the fee to the Maintainer
+        require(token.transfer(payoutAddress, c.fee / 2));
 
         /// @dev fill in the address of the provider ( to payout the deal later on )
         items[itemHash].providerAddress = tx.origin;
-        items[itemHash].providerRep = ProviderRep.balanceOf(tx.origin);
+        items[itemHash].providerRep = providerRep.balanceOf(tx.origin);
 
         emit FundItem(
             items[itemHash].seekerAddress,
@@ -257,10 +251,10 @@ contract SimpleDeal is Auth {
         require(token.transfer(c.providerAddress, c.itemValue * 2));
 
         /// @dev mint REP for Provider
-        ProviderRep.mint(c.providerAddress, 5);
+        providerRep.mint(c.providerAddress, 5);
 
         /// @dev mint REP for Seeker
-        SeekerRep.mint(c.seekerAddress, 5);
+        seekerRep.mint(c.seekerAddress, 5);
 
         /// @dev mark the deal as done
         items[_itemHash].status = Status.Done;
@@ -273,7 +267,7 @@ contract SimpleDeal is Auth {
     }
 
     /// @notice The Cancel Item Function
-    /// @notice Half of the HashtagFee is sent to PayoutAddress
+    /// @notice Half of the fee is sent to PayoutAddress
     function cancelItem(bytes32 _itemHash) public {
         Item storage c = items[_itemHash];
         if (
