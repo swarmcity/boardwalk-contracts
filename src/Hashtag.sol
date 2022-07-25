@@ -55,7 +55,7 @@ contract Hashtag is Auth {
 	struct Item {
 		Status status;
 		uint256 fee;
-		uint256 itemValue;
+		uint256 price;
 		uint256 providerRep;
 		uint256 seekerRep;
 		address providerAddress;
@@ -66,26 +66,20 @@ contract Hashtag is Auth {
 	mapping(bytes32 => Item) public items;
 
 	/// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
-	event NewItemForTwo(
-		address owner,
-		bytes32 itemHash,
+	event NewItem(
+		address indexed owner,
+		bytes32 indexed id,
 		string metadata,
-		uint256 itemValue,
+		uint256 price,
 		uint256 fee,
-		uint256 totalValue,
 		uint256 seekerRep
 	);
 
 	/// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
-	event FundItem(address seeker, address provider, bytes32 itemHash);
+	event FundItem(address indexed provider, bytes32 indexed id);
 
 	/// @dev DealStatusChange - This event is fired when a deal status is updated.
-	event ItemStatusChange(
-		address owner,
-		bytes32 itemHash,
-		Status newstatus,
-		string metadata
-	);
+	event ItemStatusChange(bytes32 indexed id, Status newstatus);
 
 	/// @dev hashtagChanged - This event is fired when the payout address is changed.
 	event SetPayoutAddress(address payoutAddress);
@@ -137,15 +131,15 @@ contract Hashtag is Auth {
 
 	/// @notice The create item function
 	function newItem(
-		bytes32 _itemHash,
-		uint256 _itemValue,
+		bytes32 _id,
+		uint256 _price,
 		string calldata _metadata
 	) public {
 		// fund this deal
-		uint256 totalValue = _itemValue + fee / 2;
+		uint256 totalValue = _price + fee / 2;
 
 		// if deal already exists don't allow to overwrite it
-		require(items[_itemHash].status == Status.None, 'ITEM_ALREADY_EXISTS');
+		require(items[_id].status == Status.None, 'ITEM_ALREADY_EXISTS');
 
 		// @dev The Seeker transfers SWT to the hashtagcontract
 		SafeTransferLib.safeTransferFrom(
@@ -159,10 +153,10 @@ contract Hashtag is Auth {
 		SafeTransferLib.safeTransfer(token, payoutAddress, fee / 2);
 
 		// if it's funded - fill in the details
-		items[_itemHash] = Item(
+		items[_id] = Item(
 			Status.Open,
 			fee,
-			_itemValue,
+			_price,
 			0,
 			seekerRep.balanceOf(msg.sender),
 			address(0),
@@ -170,20 +164,19 @@ contract Hashtag is Auth {
 			_metadata
 		);
 
-		emit NewItemForTwo(
+		emit NewItem(
 			msg.sender,
-			_itemHash,
+			_id,
 			_metadata,
-			_itemValue,
+			_price,
 			fee,
-			totalValue,
 			seekerRep.balanceOf(msg.sender)
 		);
 	}
 
 	/// @notice Provider has to fund the deal
-	function fundItem(bytes32 itemHash) public {
-		Item storage item = items[itemHash];
+	function fundItem(bytes32 id) public {
+		Item storage item = items[id];
 
 		/// @dev only allow open deals to be funded
 		require(item.status == Status.Open, 'ITEM_NOT_OPEN');
@@ -193,7 +186,7 @@ contract Hashtag is Auth {
 			token,
 			msg.sender,
 			address(this),
-			item.itemValue + item.fee / 2
+			item.price + item.fee / 2
 		);
 
 		// @dev The Seeker pays half of the fee to the Maintainer
@@ -204,12 +197,12 @@ contract Hashtag is Auth {
 		item.providerRep = providerRep.balanceOf(tx.origin);
 		item.status = Status.Funded;
 
-		emit FundItem(item.seekerAddress, item.providerAddress, itemHash);
+		emit FundItem(item.providerAddress, id);
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
-	function payoutItem(bytes32 _itemHash) public {
-		Item storage item = items[_itemHash];
+	function payoutItem(bytes32 _id) public {
+		Item storage item = items[_id];
 
 		/// @dev Only Seeker can payout
 		require(item.seekerAddress == msg.sender, 'UNAUTHORIZED');
@@ -218,11 +211,7 @@ contract Hashtag is Auth {
 		require(item.status == Status.Open, 'DEAL_NOT_OPEN');
 
 		/// @dev pay out the provider
-		SafeTransferLib.safeTransfer(
-			token,
-			item.providerAddress,
-			item.itemValue * 2
-		);
+		SafeTransferLib.safeTransfer(token, item.providerAddress, item.price * 2);
 
 		/// @dev mint REP for Provider
 		providerRep.mint(item.providerAddress, 5);
@@ -232,36 +221,26 @@ contract Hashtag is Auth {
 
 		/// @dev mark the deal as done
 		item.status = Status.Done;
-		emit ItemStatusChange(
-			item.seekerAddress,
-			_itemHash,
-			Status.Done,
-			item.metadata
-		);
+		emit ItemStatusChange(_id, Status.Done);
 	}
 
 	/// @notice The Cancel Item Function
 	/// @notice Half of the fee is sent to PayoutAddress
-	function cancelItem(bytes32 _itemHash) public {
-		Item storage item = items[_itemHash];
+	function cancelItem(bytes32 _id) public {
+		Item storage item = items[_id];
 		require(item.status == Status.Open, 'DEAL_NOT_OPEN');
 		require(item.seekerAddress == msg.sender, 'UNAUTHORIZED');
 
-		SafeTransferLib.safeTransfer(token, item.seekerAddress, item.itemValue);
+		SafeTransferLib.safeTransfer(token, item.seekerAddress, item.price);
 
 		item.status = Status.Cancelled;
-		emit ItemStatusChange(
-			msg.sender,
-			_itemHash,
-			Status.Cancelled,
-			item.metadata
-		);
+		emit ItemStatusChange(_id, Status.Cancelled);
 	}
 
 	/// @notice The Dispute Item Function
 	/// @notice The Seeker or Provider can dispute an item, only the Maintainer can resolve it.
-	function disputeItem(bytes32 _itemHash) public {
-		Item storage item = items[_itemHash];
+	function disputeItem(bytes32 _id) public {
+		Item storage item = items[_id];
 		require(item.status == Status.Funded, 'DEAL_NOT_FUNDED');
 		require(
 			item.providerAddress == msg.sender || item.seekerAddress == msg.sender,
@@ -270,18 +249,13 @@ contract Hashtag is Auth {
 
 		/// @dev Set itemStatus to Disputed
 		item.status = Status.Disputed;
-		emit ItemStatusChange(
-			msg.sender,
-			_itemHash,
-			Status.Disputed,
-			item.metadata
-		);
+		emit ItemStatusChange(_id, Status.Disputed);
 	}
 
 	/// @notice The Resolve Item Function ♡
 	/// @notice The Maintainer resolves the disputed item.
-	function resolveItem(bytes32 _itemHash, uint256 _seekerFraction) public {
-		Item storage item = items[_itemHash];
+	function resolveItem(bytes32 _id, uint256 _seekerFraction) public {
+		Item storage item = items[_id];
 		require(msg.sender == payoutAddress, 'UNAUTHORIZED');
 		require(item.status == Status.Disputed, 'DEAL_NOT_DISPUTED');
 
@@ -289,15 +263,10 @@ contract Hashtag is Auth {
 		SafeTransferLib.safeTransfer(
 			token,
 			item.providerAddress,
-			item.itemValue * 2 - _seekerFraction
+			item.price * 2 - _seekerFraction
 		);
 
 		item.status = Status.Resolved;
-		emit ItemStatusChange(
-			item.seekerAddress,
-			_itemHash,
-			Status.Resolved,
-			item.metadata
-		);
+		emit ItemStatusChange(_id, Status.Resolved);
 	}
 }
