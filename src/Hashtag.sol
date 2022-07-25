@@ -245,6 +245,7 @@ contract Hashtag is Auth {
 	function cancelItem(bytes32 _itemHash) public {
 		Item storage item = items[_itemHash];
 		require(item.status == Status.Open, 'DEAL_NOT_OPEN');
+		require(item.seekerAddress == msg.sender, 'UNAUTHORIZED');
 
 		SafeTransferLib.safeTransfer(token, item.seekerAddress, item.itemValue);
 
