@@ -91,7 +91,7 @@ contract Hashtag is Auth {
 	event SetMetadataHash(string metadataHash);
 
 	/// @dev hashtagChanged - This event is fired when the hashtag fee is changed.
-	event Setfee(uint256 fee);
+	event SetFee(uint256 fee);
 
 	/// @notice The function that creates the hashtag
 	constructor(
@@ -127,7 +127,7 @@ contract Hashtag is Auth {
 	/// @notice The Hashtag owner can always change the hashtag fee amount
 	function setFee(uint256 _fee) public requiresAuth {
 		fee = _fee;
-		emit Setfee(fee);
+		emit SetFee(fee);
 	}
 
 	/// @notice The item making stuff
