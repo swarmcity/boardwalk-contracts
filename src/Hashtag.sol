@@ -204,7 +204,7 @@ contract Hashtag is Auth {
 		require(item.seekerAddress == msg.sender, 'UNAUTHORIZED');
 
 		/// @dev you can only payout open deals
-		require(item.status == Status.Open, 'DEAL_NOT_OPEN');
+		require(item.status == Status.Funded, 'DEAL_NOT_FUNDED');
 
 		/// @dev pay out the provider
 		SafeTransferLib.safeTransfer(token, item.providerAddress, item.price * 2);
