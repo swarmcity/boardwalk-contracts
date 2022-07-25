@@ -11,11 +11,11 @@ pragma solidity ^0.8.13;
  *  This contract creates "SimpleDeals".
  */
 
-import {ERC20} from 'solmate/tokens/ERC20.sol';
-import {Auth, Authority} from 'solmate/auth/Auth.sol';
-import {SafeTransferLib} from 'solmate/utils/SafeTransferLib.sol';
+import { ERC20 } from 'solmate/tokens/ERC20.sol';
+import { Auth, Authority } from 'solmate/auth/Auth.sol';
+import { SafeTransferLib } from 'solmate/utils/SafeTransferLib.sol';
 
-import {MintableERC20} from './MintableERC20.sol';
+import { MintableERC20 } from './MintableERC20.sol';
 
 // @notice Status enum
 enum Status {

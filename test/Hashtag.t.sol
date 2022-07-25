@@ -3,10 +3,10 @@ pragma solidity ^0.8.13;
 
 import 'forge-std/Test.sol';
 
-import {MockERC20} from './lib/mocks/MockERC20.sol';
+import { MockERC20 } from './lib/mocks/MockERC20.sol';
 
-import {Hashtag} from 'src/Hashtag.sol';
-import {MintableERC20} from 'src/MintableERC20.sol';
+import { Hashtag } from 'src/Hashtag.sol';
+import { MintableERC20 } from 'src/MintableERC20.sol';
 
 contract HashtagTest is Test {
 	// Events

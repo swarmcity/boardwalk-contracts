@@ -2,16 +2,22 @@
 	"name": "@swarmcity/boardwalk-contracts",
 	"version": "0.0.0",
 	"scripts": {
+		"prepare": "husky install",
 		"lint": "prettier -c **.sol",
 		"prettier": "prettier --write **.sol"
+	},
+	"lint-staged": {
+		"*.sol": "prettier --write"
+	},
+	"devDependencies": {
+		"husky": "^8.0.1",
+		"lint-staged": "^13.0.3",
+		"prettier": "^2.7.1",
+		"prettier-plugin-solidity": "^1.0.0-dev.23"
 	},
 	"files": [
 		"src/**/*.sol"
 	],
-	"devDependencies": {
-		"prettier": "^2.7.1",
-		"prettier-plugin-solidity": "^1.0.0-beta.19"
-	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/swarmcity/boardwalk-contracts.git"

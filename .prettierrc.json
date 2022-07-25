@@ -3,5 +3,14 @@
 	"semi": false,
 	"singleQuote": true,
 	"printWidth": 80,
-	"endOfLine": "lf"
+	"endOfLine": "lf",
+	"bracketSpacing": true,
+	"overrides": [
+		{
+			"files": "*.sol",
+			"options": {
+				"explicitTypes": "always"
+			}
+		}
+	]
 }
