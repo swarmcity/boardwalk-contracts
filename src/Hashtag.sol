@@ -189,8 +189,8 @@ contract Hashtag is Auth {
 		SafeTransferLib.safeTransfer(token, payoutAddress, item.fee / 2);
 
 		/// @dev fill in the address of the provider (to payout the deal later on)
-		item.providerAddress = tx.origin;
-		item.providerRep = providerRep.balanceOf(tx.origin);
+		item.providerAddress = msg.sender;
+		item.providerRep = providerRep.balanceOf(msg.sender);
 		item.status = Status.Funded;
 
 		emit FundItem(item.providerAddress, id);
