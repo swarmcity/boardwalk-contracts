@@ -152,26 +152,22 @@ contract Hashtag is Auth {
 		// @dev The Seeker pays half of the fee to the Maintainer
 		SafeTransferLib.safeTransfer(token, payoutAddress, fee / 2);
 
+		// Seeker rep (cache to save an external call)
+		uint256 rep = seekerRep.balanceOf(msg.sender);
+
 		// if it's funded - fill in the details
 		items[_id] = Item(
 			Status.Open,
 			fee,
 			_price,
 			0,
-			seekerRep.balanceOf(msg.sender),
+			rep,
 			address(0),
 			msg.sender,
 			_metadata
 		);
 
-		emit NewItem(
-			msg.sender,
-			_id,
-			_metadata,
-			_price,
-			fee,
-			seekerRep.balanceOf(msg.sender)
-		);
+		emit NewItem(msg.sender, _id, _metadata, _price, fee, rep);
 	}
 
 	/// @notice Provider has to fund the deal
