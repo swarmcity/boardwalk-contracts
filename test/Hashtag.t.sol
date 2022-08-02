@@ -33,7 +33,13 @@ contract HashtagTest is Test {
 		// Create contracts
 		vm.startPrank(maintainer);
 		token = new MockERC20('Swarm City', 'SWT', 18);
-		hashtag = new Hashtag(address(token), 'Marketplace', 50e16, 'SomeHash');
+		hashtag = new Hashtag(
+			address(token),
+			'Marketplace',
+			50e16,
+			'SomeHash',
+			maintainer
+		);
 
 		providerRep = hashtag.providerRep();
 		seekerRep = hashtag.seekerRep();

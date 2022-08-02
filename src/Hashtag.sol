@@ -95,8 +95,9 @@ contract Hashtag is Auth {
 		address _token,
 		string memory _name,
 		uint256 _fee,
-		string memory _metadataHash
-	) Auth(msg.sender, Authority(address(0))) {
+		string memory _metadataHash,
+		address owner
+	) Auth(owner, Authority(address(0))) {
 		// Create reputation tokens
 		seekerRep = new MintableERC20('SeekerRep', 'SWRS', 0);
 		providerRep = new MintableERC20('ProviderRep', 'SWRP', 0);
