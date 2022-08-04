@@ -91,14 +91,20 @@ contract Hashtag is Auth {
 	event SetFee(uint256 fee);
 
 	/// @notice The function that creates the hashtag
-	constructor(
+	constructor() Auth(msg.sender, Authority(address(0))) {}
+
+	/// @notice The function that initializes the hashtag
+	function init(
 		address _token,
 		string memory _name,
 		uint256 _fee,
 		string memory _metadataHash,
 		address owner
-	) Auth(owner, Authority(address(0))) {
+	) public {
+		require(address(seekerRep) != address(0), 'ALREADY_INITIALIZED');
+
 		// Create reputation tokens
+		// TODO: Make these clones as well
 		seekerRep = new MintableERC20('SeekerRep', 'SWRS', 0);
 		providerRep = new MintableERC20('ProviderRep', 'SWRP', 0);
 
@@ -108,6 +114,9 @@ contract Hashtag is Auth {
 		metadataHash = _metadataHash;
 		fee = _fee;
 		payoutAddress = msg.sender;
+
+		// Auth
+		setOwner(owner);
 	}
 
 	/// @notice The Hashtag owner can always update the payout address.

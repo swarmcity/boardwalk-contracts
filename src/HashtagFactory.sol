@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+// OpenZeppelin
+import '@openzeppelin/contracts/proxy/Clones.sol';
+
 // Custom
 import { Hashtag } from './Hashtag.sol';
 
 contract HashtagFactory {
-	event HashtagCreated(
-		address indexed addr,
-		string name,
-		string metadata,
-		uint256 fee
-	);
+	event HashtagCreated(address indexed addr, string name);
 
-	Hashtag[] public hashtags;
+	address public master;
+
+	constructor() {
+		master = address(new Hashtag());
+	}
 
 	function create(
 		address token,
@@ -20,8 +22,8 @@ contract HashtagFactory {
 		uint256 fee,
 		string memory metadata
 	) public {
-		Hashtag hashtag = new Hashtag(token, name, fee, metadata, msg.sender);
-		hashtags.push(hashtag);
-		emit HashtagCreated(address(hashtag), name, metadata, fee);
+		Hashtag hashtag = Hashtag(Clones.clone(master));
+		hashtag.init(token, name, fee, metadata, msg.sender);
+		emit HashtagCreated(address(hashtag), name);
 	}
 }
