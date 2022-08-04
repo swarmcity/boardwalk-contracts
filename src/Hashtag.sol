@@ -99,14 +99,15 @@ contract Hashtag is Auth {
 		string memory _name,
 		uint256 _fee,
 		string memory _metadataHash,
-		address owner
+		address owner,
+		MintableERC20 _seekerRep,
+		MintableERC20 _providerRep
 	) public {
 		require(address(seekerRep) != address(0), 'ALREADY_INITIALIZED');
 
-		// Create reputation tokens
-		// TODO: Make these clones as well
-		seekerRep = new MintableERC20('SeekerRep', 'SWRS', 0);
-		providerRep = new MintableERC20('ProviderRep', 'SWRP', 0);
+		// Reputation tokens
+		seekerRep = _seekerRep;
+		providerRep = _providerRep;
 
 		// Global config
 		name = _name;
