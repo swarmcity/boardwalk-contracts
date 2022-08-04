@@ -5,11 +5,7 @@ pragma solidity ^0.8.13;
 import { Hashtag } from './Hashtag.sol';
 
 contract HashtagFactory {
-	event HashtagCreated(
-		address indexed addr,
-		string indexed name,
-		string indexed metadata
-	);
+	event HashtagCreated(address indexed addr, string name, string metadata);
 
 	Hashtag[] public hashtags;
 
