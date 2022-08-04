@@ -32,13 +32,24 @@ contract HashtagTest is Test {
 	function setUp() public {
 		// Create contracts
 		vm.startPrank(maintainer);
+
+		// Currency
 		token = new MockERC20('Swarm City', 'SWT', 18);
-		hashtag = new Hashtag(
+
+		// Reputation tokens
+		seekerRep = new MintableERC20('SeekerRep', 'SWRS', 0);
+		providerRep = new MintableERC20('ProviderRep', 'SWRP', 0);
+
+		// Hashtag
+		hashtag = new Hashtag();
+		hashtag.init(
 			address(token),
 			'Marketplace',
 			50e16,
 			'SomeHash',
-			maintainer
+			maintainer,
+			seekerRep,
+			providerRep
 		);
 
 		providerRep = hashtag.providerRep();
