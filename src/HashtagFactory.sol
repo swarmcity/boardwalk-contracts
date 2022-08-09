@@ -31,6 +31,10 @@ contract HashtagFactory {
 		MintableERC20 seekerRep = MintableERC20(Clones.clone(masterSeekerRep));
 		MintableERC20 providerRep = MintableERC20(Clones.clone(masterProviderRep));
 
+		/// @dev set token owners
+		seekerRep.setOwner(msg.sender);
+		providerRep.setOwner(msg.sender);
+
 		/// @dev create the hashtag
 		Hashtag hashtag = Hashtag(Clones.clone(masterHashtag));
 		hashtag.init(
