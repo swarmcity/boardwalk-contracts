@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
-
 import 'forge-std/Test.sol';
 
-import { MockERC20 } from './lib/mocks/MockERC20.sol';
+// Mocks
+import { MockERC20 } from './mocks/MockERC20.sol';
 
+// Custom
 import { Hashtag } from 'src/Hashtag.sol';
 import { MintableERC20 } from 'src/MintableERC20.sol';
 

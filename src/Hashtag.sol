@@ -103,7 +103,8 @@ contract Hashtag is Auth {
 		MintableERC20 _seekerRep,
 		MintableERC20 _providerRep
 	) public {
-		require(address(seekerRep) == address(0), 'ALREADY_INITIALIZED');
+		require(token == ERC20(address(0)), 'ALREADY_INITIALIZED');
+		require(_token != address(0), 'INVALID_TOKEN');
 
 		// Reputation tokens
 		seekerRep = _seekerRep;
