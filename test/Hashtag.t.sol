@@ -38,8 +38,12 @@ contract HashtagTest is Test {
 		token = new MockERC20('Swarm City', 'SWT', 18);
 
 		// Reputation tokens
-		seekerRep = new MintableERC20('SeekerRep', 'SWRS', 0);
-		providerRep = new MintableERC20('ProviderRep', 'SWRP', 0);
+		seekerRep = new MintableERC20(0);
+		providerRep = new MintableERC20(0);
+
+		// Initialize tokens
+		seekerRep.init('SeekerRep', 'SWRS', maintainer);
+		providerRep.init('ProviderRep', 'SWRP', maintainer);
 
 		// Hashtag
 		hashtag = new Hashtag();
@@ -53,8 +57,8 @@ contract HashtagTest is Test {
 			providerRep
 		);
 
-		providerRep = hashtag.providerRep();
-		seekerRep = hashtag.seekerRep();
+		providerRep.setOwner(address(hashtag));
+		seekerRep.setOwner(address(hashtag));
 
 		// Mint tokens
 		token.mint(seeker, 100e18);

@@ -9,7 +9,8 @@ contract MintableERC20Test is Test {
 	MintableERC20 token;
 
 	function setUp() public {
-		token = new MintableERC20('Name', 'Symbol', 18);
+		token = new MintableERC20(18);
+		token.init('Name', 'Symbol', address(this));
 	}
 
 	function testMetadata() public {

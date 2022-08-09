@@ -17,8 +17,8 @@ contract HashtagFactory {
 
 	constructor() {
 		masterHashtag = address(new Hashtag());
-		masterSeekerRep = address(new MintableERC20('SeekerRep', 'SWRS', 0));
-		masterProviderRep = address(new MintableERC20('ProviderRep', 'SWRP', 0));
+		masterSeekerRep = address(new MintableERC20(0));
+		masterProviderRep = address(new MintableERC20(0));
 	}
 
 	function create(
@@ -26,17 +26,17 @@ contract HashtagFactory {
 		string memory name,
 		uint256 fee,
 		string memory metadata
-	) public {
+	) public returns (Hashtag hashtag) {
 		/// @dev create the reputation tokens
 		MintableERC20 seekerRep = MintableERC20(Clones.clone(masterSeekerRep));
 		MintableERC20 providerRep = MintableERC20(Clones.clone(masterProviderRep));
 
-		/// @dev set token owners
-		seekerRep.setOwner(msg.sender);
-		providerRep.setOwner(msg.sender);
+		/// @dev initialize the tokens
+		seekerRep.init('SeekerRep', 'SWRS', msg.sender);
+		providerRep.init('ProviderRep', 'SWRP', msg.sender);
 
 		/// @dev create the hashtag
-		Hashtag hashtag = Hashtag(Clones.clone(masterHashtag));
+		hashtag = Hashtag(Clones.clone(masterHashtag));
 		hashtag.init(
 			token,
 			name,

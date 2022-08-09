@@ -5,11 +5,22 @@ import { ERC20 } from 'solmate/tokens/ERC20.sol';
 import { Auth, Authority } from 'solmate/auth/Auth.sol';
 
 contract MintableERC20 is ERC20, Auth {
-	constructor(
+	constructor(uint8 _decimals)
+		ERC20('', '', _decimals)
+		Auth(address(0), Authority(address(0)))
+	{}
+
+	function init(
 		string memory _name,
 		string memory _symbol,
-		uint8 _decimals
-	) ERC20(_name, _symbol, _decimals) Auth(msg.sender, Authority(address(0))) {}
+		address _owner
+	) public {
+		require(owner == address(0), 'ALREADY_INITIALIZED');
+
+		name = _name;
+		symbol = _symbol;
+		owner = _owner;
+	}
 
 	function mint(address to, uint256 amount) external requiresAuth {
 		_mint(to, amount);

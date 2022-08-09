@@ -91,7 +91,7 @@ contract Hashtag is Auth {
 	event SetFee(uint256 fee);
 
 	/// @notice The function that creates the hashtag
-	constructor() Auth(msg.sender, Authority(address(0))) {}
+	constructor() Auth(address(0), Authority(address(0))) {}
 
 	/// @notice The function that initializes the hashtag
 	function init(
@@ -99,7 +99,7 @@ contract Hashtag is Auth {
 		string memory _name,
 		uint256 _fee,
 		string memory _metadataHash,
-		address owner,
+		address _owner,
 		MintableERC20 _seekerRep,
 		MintableERC20 _providerRep
 	) public {
@@ -118,7 +118,7 @@ contract Hashtag is Auth {
 		payoutAddress = msg.sender;
 
 		// Auth
-		setOwner(owner);
+		owner = _owner;
 	}
 
 	/// @notice The Hashtag owner can always update the payout address.
