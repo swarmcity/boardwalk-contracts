@@ -183,7 +183,8 @@ contract Hashtag is Auth {
 	}
 
 	/// @notice Provider has to fund the deal
-	function fundItem(bytes32 id) public {
+	function fundItem(bytes memory preImage) public {
+		bytes32 id = keccak256(preImage);
 		Item storage item = items[id];
 
 		/// @dev only allow open deals to be funded
