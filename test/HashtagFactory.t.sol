@@ -14,7 +14,12 @@ import { MockERC20 } from './mocks/MockERC20.sol';
 
 contract HashtagFactoryTest is Test {
 	// Events
-	event HashtagCreated(address indexed addr, string name);
+	event HashtagCreated(
+		address indexed addr,
+		string name,
+		address seekerRep,
+		address providerRep
+	);
 
 	// Contracts
 	MockERC20 token;
@@ -27,8 +32,8 @@ contract HashtagFactoryTest is Test {
 
 	function testCanCreateHashtag() public {
 		// Expect an event to be emitted
-		vm.expectEmit(false, true, true, true);
-		emit HashtagCreated(address(0), 'Settler');
+		vm.expectEmit(false, true, true, false);
+		emit HashtagCreated(address(0), 'Settler', address(0), address(0));
 
 		// Create the hashtag and record logs
 		vm.recordLogs();
@@ -42,19 +47,29 @@ contract HashtagFactoryTest is Test {
 
 		// Check if the address emitted in the event is right
 		address emitted;
+		address seekerRep;
+		address providerRep;
+		string memory name;
+
 		for (uint256 i = 0; i < logs.length; i++) {
 			if (logs[i].topics[0] == HashtagCreated.selector) {
 				emitted = Bytes32AddressLib.fromLast20Bytes(logs[i].topics[1]);
+				(name, seekerRep, providerRep) = abi.decode(
+					logs[i].data,
+					(string, address, address)
+				);
+				break;
 			}
 		}
 
 		// Check metadata
 		assertEq(address(hashtag.token()), address(token));
 		assertEq(hashtag.name(), 'Settler');
+		assertEq(hashtag.name(), name);
 		assertEq(hashtag.fee(), 500000000000000000);
 		assertEq(hashtag.owner(), address(this));
 		assertEq(address(hashtag), emitted);
-		assertTrue(address(hashtag.seekerRep()) != address(0));
-		assertTrue(address(hashtag.providerRep()) != address(0));
+		assertEq(address(hashtag.seekerRep()), seekerRep);
+		assertEq(address(hashtag.providerRep()), providerRep);
 	}
 }

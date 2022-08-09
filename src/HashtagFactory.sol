@@ -9,16 +9,19 @@ import { Hashtag } from './Hashtag.sol';
 import { MintableERC20 } from './MintableERC20.sol';
 
 contract HashtagFactory {
-	event HashtagCreated(address indexed addr, string name);
+	event HashtagCreated(
+		address indexed addr,
+		string name,
+		address seekerRep,
+		address providerRep
+	);
 
 	address public masterHashtag;
-	address public masterSeekerRep;
-	address public masterProviderRep;
+	address public masterRep;
 
 	constructor() {
 		masterHashtag = address(new Hashtag());
-		masterSeekerRep = address(new MintableERC20(0));
-		masterProviderRep = address(new MintableERC20(0));
+		masterRep = address(new MintableERC20(0));
 	}
 
 	function create(
@@ -28,8 +31,8 @@ contract HashtagFactory {
 		string memory metadata
 	) public returns (Hashtag hashtag) {
 		/// @dev create the reputation tokens
-		MintableERC20 seekerRep = MintableERC20(Clones.clone(masterSeekerRep));
-		MintableERC20 providerRep = MintableERC20(Clones.clone(masterProviderRep));
+		MintableERC20 seekerRep = MintableERC20(Clones.clone(masterRep));
+		MintableERC20 providerRep = MintableERC20(Clones.clone(masterRep));
 
 		/// @dev initialize the tokens
 		seekerRep.init('SeekerRep', 'SWRS', msg.sender);
@@ -46,6 +49,13 @@ contract HashtagFactory {
 			seekerRep,
 			providerRep
 		);
-		emit HashtagCreated(address(hashtag), name);
+
+		/// @dev emit hashtag created event
+		emit HashtagCreated(
+			address(hashtag),
+			name,
+			address(seekerRep),
+			address(providerRep)
+		);
 	}
 }
