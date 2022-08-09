@@ -9,7 +9,8 @@ import { MintableERC20 } from 'src/MintableERC20.sol';
 
 contract HashtagListTest is Test {
 	// Events
-	event HashtagAdd(Hashtag indexed addr, string name);
+	event HashtagAdded(Hashtag indexed addr, string name);
+	event HashtagRemoved(Hashtag indexed addr);
 
 	// Contracts
 	HashtagList hashtagList;
@@ -43,7 +44,7 @@ contract HashtagListTest is Test {
 
 		// Add hashtag and expect event
 		vm.expectEmit(true, true, true, true);
-		emit HashtagAdd(hashtag, 'Hashtag');
+		emit HashtagAdded(hashtag, 'Hashtag');
 		hashtagList.add(hashtag);
 
 		// Check metadata
@@ -66,5 +67,49 @@ contract HashtagListTest is Test {
 		}
 
 		assertEq(hashtagList.count(), 6);
+	}
+
+	function testCanRemoveHashtag() public {
+		Hashtag one = createHashtag('One');
+		Hashtag two = createHashtag('Two');
+
+		// Add hashtag
+		hashtagList.add(one);
+		hashtagList.add(two);
+
+		// Remove hashtag and expect event
+		vm.expectEmit(true, true, true, true);
+		emit HashtagRemoved(one);
+		hashtagList.remove(0);
+
+		// Check metadata
+		assertEq(hashtagList.count(), 1);
+
+		// Make sure "two" is the only element left
+		assertEq(address(hashtagList.hashtags(0)), address(two));
+
+		// Expect the second element to not exist
+		vm.expectRevert();
+		hashtagList.hashtags(1);
+	}
+
+	function testCanRemoveAllHashtags() public {
+		hashtagList.add(createHashtag('One'));
+		hashtagList.add(createHashtag('Two'));
+		hashtagList.add(createHashtag('Three'));
+		hashtagList.add(createHashtag('Four'));
+		hashtagList.add(createHashtag('Five'));
+		hashtagList.add(createHashtag('Six'));
+
+		hashtagList.remove(5);
+		hashtagList.remove(1);
+		hashtagList.remove(3);
+		hashtagList.remove(0);
+		hashtagList.remove(1);
+		hashtagList.remove(0);
+
+		assertEq(hashtagList.count(), 0);
+		vm.expectRevert();
+		hashtagList.hashtags(0);
 	}
 }

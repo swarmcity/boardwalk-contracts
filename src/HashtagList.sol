@@ -8,7 +8,8 @@ import { Auth, Authority } from 'solmate/auth/Auth.sol';
 import { Hashtag } from './Hashtag.sol';
 
 contract HashtagList is Auth {
-	event HashtagAdd(Hashtag indexed addr, string name);
+	event HashtagAdded(Hashtag indexed addr, string name);
+	event HashtagRemoved(Hashtag indexed addr);
 
 	Hashtag[] public hashtags;
 
@@ -17,7 +18,14 @@ contract HashtagList is Auth {
 	function add(Hashtag hashtag) public requiresAuth {
 		require(address(hashtag.token()) != address(0), 'UNINITIALIZED');
 		hashtags.push(hashtag);
-		emit HashtagAdd(hashtag, hashtag.name());
+		emit HashtagAdded(hashtag, hashtag.name());
+	}
+
+	function remove(uint256 index) public requiresAuth {
+		Hashtag hashtag = hashtags[index];
+		hashtags[index] = hashtags[hashtags.length - 1];
+		hashtags.pop();
+		emit HashtagRemoved(hashtag);
 	}
 
 	function count() public view returns (uint256) {
