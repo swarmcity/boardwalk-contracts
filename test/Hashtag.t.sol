@@ -62,6 +62,7 @@ contract HashtagTest is Test {
 
 		// Mint tokens
 		token.mint(seeker, 100e18);
+		token.mint(provider, 100e18);
 		vm.stopPrank();
 	}
 
@@ -125,5 +126,31 @@ contract HashtagTest is Test {
 
 		vm.expectRevert('ITEM_ALREADY_EXISTS');
 		hashtag.newItem('ItemHash', 15e18, 'OtherMetadata');
+	}
+
+	function testCanFundItem() public {
+		// Create an item
+		vm.startPrank(seeker);
+		token.approve(address(hashtag), 10e18 + 25e16);
+
+		bytes memory key = 'ItemHash';
+		bytes32 id = keccak256(key);
+
+		hashtag.newItem(id, 10e18, 'ItemMetadata');
+		vm.stopPrank();
+
+		// Fund the item
+		vm.startPrank(provider);
+		token.approve(address(hashtag), 10e18 + 25e16);
+
+		hashtag.fundItem(key);
+	}
+
+	function testCannotFundInexistantItem() public {
+		vm.startPrank(provider);
+		token.approve(address(hashtag), 10e18 + 25e16);
+
+		vm.expectRevert('ITEM_NOT_OPEN');
+		hashtag.fundItem(bytes('ItemHash'));
 	}
 }
