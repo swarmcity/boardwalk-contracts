@@ -11,10 +11,12 @@ pragma solidity ^0.8.15;
  *  This contract creates "SimpleDeals".
  */
 
+// Solmate
 import { ERC20 } from 'solmate/tokens/ERC20.sol';
 import { Auth, Authority } from 'solmate/auth/Auth.sol';
 import { SafeTransferLib } from 'solmate/utils/SafeTransferLib.sol';
 
+// Custom
 import { MintableERC20 } from './MintableERC20.sol';
 
 // @notice Status enum
@@ -60,26 +62,27 @@ contract Marketplace is Auth {
 		uint256 seekerRep;
 		address providerAddress;
 		address seekerAddress;
-		string metadata;
+		bytes32 metadata;
 	}
 
-	mapping(bytes32 => Item) public items;
+	uint256 itemId = 1;
+	mapping(uint256 => Item) public items;
 
 	/// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
 	event NewItem(
 		address indexed owner,
-		bytes32 indexed id,
-		string metadata,
+		uint256 indexed id,
+		bytes32 metadata,
 		uint256 price,
 		uint256 fee,
 		uint256 seekerRep
 	);
 
 	/// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
-	event FundItem(address indexed provider, bytes32 indexed id);
+	event FundItem(address indexed provider, uint256 indexed id);
 
 	/// @dev DealStatusChange - This event is fired when a deal status is updated.
-	event ItemStatusChange(bytes32 indexed id, Status newstatus);
+	event ItemStatusChange(uint256 indexed id, Status newstatus);
 
 	/// @dev marketplaceChanged - This event is fired when the payout address is changed.
 	event SetPayoutAddress(address payoutAddress);
@@ -89,6 +92,10 @@ contract Marketplace is Auth {
 
 	/// @dev marketplaceChanged - This event is fired when the marketplace fee is changed.
 	event SetFee(uint256 fee);
+
+	// EIP-712
+	uint256 internal INITIAL_CHAIN_ID;
+	bytes32 internal INITIAL_DOMAIN_SEPARATOR;
 
 	/// @notice The function that creates the marketplace
 	constructor() Auth(address(0), Authority(address(0))) {}
@@ -119,6 +126,10 @@ contract Marketplace is Auth {
 
 		// Auth
 		owner = _owner;
+
+		// EIP-712
+		INITIAL_CHAIN_ID = block.chainid;
+		INITIAL_DOMAIN_SEPARATOR = computeDomainSeparator();
 	}
 
 	/// @notice The Marketplace owner can always update the payout address.
@@ -142,16 +153,19 @@ contract Marketplace is Auth {
 	/// @notice The item making stuff
 
 	/// @notice The create item function
-	function newItem(
-		bytes32 _id,
-		uint256 _price,
-		string calldata _metadata
-	) public {
+	function newItem(uint256 _price, bytes32 _metadata)
+		public
+		returns (uint256 id)
+	{
+		unchecked {
+			id = itemId++;
+		}
+
 		// fund this deal
 		uint256 totalValue = _price + fee / 2;
 
 		// if deal already exists don't allow to overwrite it
-		require(items[_id].status == Status.None, 'ITEM_ALREADY_EXISTS');
+		require(items[id].status == Status.None, 'ITEM_ALREADY_EXISTS');
 
 		// @dev The Seeker transfers SWT to the marketplacecontract
 		SafeTransferLib.safeTransferFrom(
@@ -168,7 +182,7 @@ contract Marketplace is Auth {
 		uint256 rep = seekerRep.balanceOf(msg.sender);
 
 		// if it's funded - fill in the details
-		items[_id] = Item(
+		items[id] = Item(
 			Status.Open,
 			fee,
 			_price,
@@ -179,16 +193,23 @@ contract Marketplace is Auth {
 			_metadata
 		);
 
-		emit NewItem(msg.sender, _id, _metadata, _price, fee, rep);
+		emit NewItem(msg.sender, id, _metadata, _price, fee, rep);
 	}
 
 	/// @notice Provider has to fund the deal
-	function fundItem(bytes memory preImage) public {
-		bytes32 id = keccak256(preImage);
+	function fundItem(
+		uint256 id,
+		uint8 v,
+		bytes32 r,
+		bytes32 s
+	) public {
 		Item storage item = items[id];
 
 		/// @dev only allow open deals to be funded
 		require(item.status == Status.Open, 'ITEM_NOT_OPEN');
+
+		// Check the seeker's signature
+		verifyFundItemSignature(item.seekerAddress, msg.sender, id, v, r, s);
 
 		/// @dev put the tokens from the provider on the deal
 		SafeTransferLib.safeTransferFrom(
@@ -210,7 +231,7 @@ contract Marketplace is Auth {
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
-	function payoutItem(bytes32 _id) public {
+	function payoutItem(uint256 _id) public {
 		Item storage item = items[_id];
 
 		/// @dev Only Seeker can payout
@@ -235,7 +256,7 @@ contract Marketplace is Auth {
 
 	/// @notice The Cancel Item Function
 	/// @notice Half of the fee is sent to PayoutAddress
-	function cancelItem(bytes32 _id) public {
+	function cancelItem(uint256 _id) public {
 		Item storage item = items[_id];
 		require(item.status == Status.Open, 'DEAL_NOT_OPEN');
 		require(item.seekerAddress == msg.sender, 'UNAUTHORIZED');
@@ -248,7 +269,7 @@ contract Marketplace is Auth {
 
 	/// @notice The Dispute Item Function
 	/// @notice The Seeker or Provider can dispute an item, only the Maintainer can resolve it.
-	function disputeItem(bytes32 _id) public {
+	function disputeItem(uint256 _id) public {
 		Item storage item = items[_id];
 		require(item.status == Status.Funded, 'DEAL_NOT_FUNDED');
 		require(
@@ -263,7 +284,7 @@ contract Marketplace is Auth {
 
 	/// @notice The Resolve Item Function ♡
 	/// @notice The Maintainer resolves the disputed item.
-	function resolveItem(bytes32 _id, uint256 _seekerFraction) public {
+	function resolveItem(uint256 _id, uint256 _seekerFraction) public {
 		Item storage item = items[_id];
 		require(msg.sender == payoutAddress, 'UNAUTHORIZED');
 		require(item.status == Status.Disputed, 'DEAL_NOT_DISPUTED');
@@ -277,5 +298,67 @@ contract Marketplace is Auth {
 
 		item.status = Status.Resolved;
 		emit ItemStatusChange(_id, Status.Resolved);
+	}
+
+	// EIP-712
+	function DOMAIN_SEPARATOR() public view virtual returns (bytes32) {
+		return
+			block.chainid == INITIAL_CHAIN_ID
+				? INITIAL_DOMAIN_SEPARATOR
+				: computeDomainSeparator();
+	}
+
+	function computeDomainSeparator() internal view virtual returns (bytes32) {
+		return
+			keccak256(
+				abi.encode(
+					keccak256(
+						'EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'
+					),
+					keccak256(bytes(name)),
+					keccak256('1'),
+					block.chainid,
+					address(this)
+				)
+			);
+	}
+
+	function verifyFundItemSignature(
+		address seeker,
+		address provider,
+		uint256 item,
+		uint8 v,
+		bytes32 r,
+		bytes32 s
+	) internal view {
+		require(
+			uint256(s) <=
+				0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0,
+			'INVALID_SIGNATURE_S'
+		);
+
+		address recoveredAddress = ecrecover(
+			keccak256(
+				abi.encodePacked(
+					'\x19\x01',
+					DOMAIN_SEPARATOR(),
+					keccak256(
+						abi.encode(
+							keccak256(
+								'PermitProvider(address seeker,address provider,uint256 item)'
+							),
+							seeker,
+							provider,
+							item
+						)
+					)
+				)
+			),
+			v,
+			r,
+			s
+		);
+
+		require(recoveredAddress == seeker, 'INVALID_SIGNER');
 	}
 }

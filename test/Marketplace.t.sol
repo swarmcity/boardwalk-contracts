@@ -25,9 +25,13 @@ contract MarketplaceTest is Test {
 	MintableERC20 providerRep;
 	MintableERC20 seekerRep;
 
+	// Private keys
+	uint256 seekerPrivateKey = 0x533;
+	uint256 providerPrivateKey = 0x013;
+
 	// Accounts
-	address seeker = address(1);
-	address provider = address(2);
+	address seeker = vm.addr(seekerPrivateKey);
+	address provider = vm.addr(providerPrivateKey);
 	address maintainer = address(3);
 
 	function setUp() public {
@@ -112,20 +116,19 @@ contract MarketplaceTest is Test {
 	function testCanCreateItem() public {
 		vm.startPrank(seeker);
 		token.approve(address(marketplace), 10e18 + 25e16);
-		marketplace.newItem('ItemHash', 10e18, 'ItemMetadata');
+		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
 
+		assertEq(id, 1);
 		assertEq(token.balanceOf(seeker), 100e18 - 10e18 - 25e16);
 		assertEq(token.balanceOf(maintainer), 25e16);
 		assertEq(token.balanceOf(address(marketplace)), 10e18);
 	}
 
-	function testCannotCreateSameItem() public {
+	function testCanCreateMultipleItems() public {
 		vm.startPrank(seeker);
-		token.approve(address(marketplace), 10e18 + 2 * 25e16);
-		marketplace.newItem('ItemHash', 10e18, 'ItemMetadata');
-
-		vm.expectRevert('ITEM_ALREADY_EXISTS');
-		marketplace.newItem('ItemHash', 15e18, 'OtherMetadata');
+		token.approve(address(marketplace), 1000e18);
+		assertEq(marketplace.newItem(10e18, 'ItemMetadata'), 1);
+		assertEq(marketplace.newItem(10e18, 'ItemMetadata'), 2);
 	}
 
 	function testCanFundItem() public {
@@ -133,17 +136,18 @@ contract MarketplaceTest is Test {
 		vm.startPrank(seeker);
 		token.approve(address(marketplace), 10e18 + 25e16);
 
-		bytes memory key = 'ItemHash';
-		bytes32 id = keccak256(key);
-
-		marketplace.newItem(id, 10e18, 'ItemMetadata');
+		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
 		vm.stopPrank();
 
 		// Fund the item
 		vm.startPrank(provider);
 		token.approve(address(marketplace), 10e18 + 25e16);
 
-		marketplace.fundItem(key);
+		(uint8 v, bytes32 r, bytes32 s) = vm.sign(
+			seekerPrivateKey,
+			getFundItemHash(id)
+		);
+		marketplace.fundItem(id, v, r, s);
 	}
 
 	function testCannotFundInexistantItem() public {
@@ -151,6 +155,53 @@ contract MarketplaceTest is Test {
 		token.approve(address(marketplace), 10e18 + 25e16);
 
 		vm.expectRevert('ITEM_NOT_OPEN');
-		marketplace.fundItem(bytes('ItemHash'));
+		marketplace.fundItem(0, 0, '', '');
+	}
+
+	function testCannotFundItemWithWrongSignature() public {
+		// Create an item
+		vm.startPrank(seeker);
+		token.approve(address(marketplace), 10e18 + 25e16);
+
+		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
+		vm.stopPrank();
+
+		// Fund the item
+		vm.startPrank(provider);
+		token.approve(address(marketplace), 10e18 + 25e16);
+
+		// Made up signature
+		vm.expectRevert('INVALID_SIGNER');
+		marketplace.fundItem(id, 27, 0, 0);
+
+		// Provider signature
+		(uint8 v, bytes32 r, bytes32 s) = vm.sign(
+			providerPrivateKey,
+			getFundItemHash(id)
+		);
+
+		vm.expectRevert('INVALID_SIGNER');
+		marketplace.fundItem(id, v, r, s);
+	}
+
+	// Private
+	function getFundItemHash(uint256 item) public view returns (bytes32) {
+		return
+			keccak256(
+				abi.encodePacked(
+					'\x19\x01',
+					marketplace.DOMAIN_SEPARATOR(),
+					keccak256(
+						abi.encode(
+							keccak256(
+								'PermitProvider(address seeker,address provider,uint256 item)'
+							),
+							seeker,
+							provider,
+							item
+						)
+					)
+				)
+			);
 	}
 }
