@@ -2,11 +2,11 @@
 pragma solidity ^0.8.15;
 
 /**
- *  @title Simple Deal Hashtag
+ *  @title Simple Deal Marketplace
  *  @dev Created in Swarm City anno 2017,
  *  for the world, with love.
  *  description Symmetrical Escrow Deal Contract
- *  description This is the hashtag contract for creating Swarm City marketplaces.
+ *  description This is the marketplace contract for creating Swarm City marketplaces.
  *  It's the first, most simple approach to making Swarm City work.
  *  This contract creates "SimpleDeals".
  */
@@ -28,14 +28,14 @@ enum Status {
 	Cancelled
 }
 
-contract Hashtag is Auth {
-	/// @dev name The human readable name of the hashtag
-	/// @dev fee The fixed hashtag fee in the specified token
+contract Marketplace is Auth {
+	/// @dev name The human readable name of the marketplace
+	/// @dev fee The fixed marketplace fee in the specified token
 	/// @dev token The token for fees
 	/// @dev providerRep The rep token that is minted for the Provider
 	/// @dev seekerRep The rep token that is minted for the Seeker
-	/// @dev payoutaddress The address where the hashtag fee is sent.
-	/// @dev metadataHash The IPFS hash metadata for this hashtag
+	/// @dev payoutaddress The address where the marketplace fee is sent.
+	/// @dev metadataHash The IPFS hash metadata for this marketplace
 	string public name;
 	uint256 public fee;
 	ERC20 public token;
@@ -47,10 +47,10 @@ contract Hashtag is Auth {
 	/// @param dealStruct The deal object.
 	/// @param status Coming from Status enum.
 	/// Statuses: Open, Done, Disputed, Resolved, Cancelled
-	/// @param fee The value of the hashtag fee is stored in the deal. This prevents the hashtagmaintainer to influence an existing deal when changing the hashtag fee.
+	/// @param fee The value of the marketplace fee is stored in the deal. This prevents the marketplacemaintainer to influence an existing deal when changing the marketplace fee.
 	/// @param dealValue The value of the deal (SWT)
 	/// @param provider The address of the provider
-	/// @param deals Array of deals made by this hashtag
+	/// @param deals Array of deals made by this marketplace
 
 	struct Item {
 		Status status;
@@ -81,19 +81,19 @@ contract Hashtag is Auth {
 	/// @dev DealStatusChange - This event is fired when a deal status is updated.
 	event ItemStatusChange(bytes32 indexed id, Status newstatus);
 
-	/// @dev hashtagChanged - This event is fired when the payout address is changed.
+	/// @dev marketplaceChanged - This event is fired when the payout address is changed.
 	event SetPayoutAddress(address payoutAddress);
 
-	/// @dev hashtagChanged - This event is fired when the metadata hash is changed.
+	/// @dev marketplaceChanged - This event is fired when the metadata hash is changed.
 	event SetMetadataHash(string metadataHash);
 
-	/// @dev hashtagChanged - This event is fired when the hashtag fee is changed.
+	/// @dev marketplaceChanged - This event is fired when the marketplace fee is changed.
 	event SetFee(uint256 fee);
 
-	/// @notice The function that creates the hashtag
+	/// @notice The function that creates the marketplace
 	constructor() Auth(address(0), Authority(address(0))) {}
 
-	/// @notice The function that initializes the hashtag
+	/// @notice The function that initializes the marketplace
 	function init(
 		address _token,
 		string memory _name,
@@ -121,19 +121,19 @@ contract Hashtag is Auth {
 		owner = _owner;
 	}
 
-	/// @notice The Hashtag owner can always update the payout address.
+	/// @notice The Marketplace owner can always update the payout address.
 	function setPayoutAddress(address _payoutaddress) public requiresAuth {
 		payoutAddress = _payoutaddress;
 		emit SetPayoutAddress(payoutAddress);
 	}
 
-	/// @notice The Hashtag owner can always update the metadata for the hashtag.
+	/// @notice The Marketplace owner can always update the metadata for the marketplace.
 	function setMetadataHash(string calldata _metadataHash) public requiresAuth {
 		metadataHash = _metadataHash;
 		emit SetMetadataHash(metadataHash);
 	}
 
-	/// @notice The Hashtag owner can always change the hashtag fee amount
+	/// @notice The Marketplace owner can always change the marketplace fee amount
 	function setFee(uint256 _fee) public requiresAuth {
 		fee = _fee;
 		emit SetFee(fee);
@@ -153,7 +153,7 @@ contract Hashtag is Auth {
 		// if deal already exists don't allow to overwrite it
 		require(items[_id].status == Status.None, 'ITEM_ALREADY_EXISTS');
 
-		// @dev The Seeker transfers SWT to the hashtagcontract
+		// @dev The Seeker transfers SWT to the marketplacecontract
 		SafeTransferLib.safeTransferFrom(
 			token,
 			msg.sender,

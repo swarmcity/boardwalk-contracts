@@ -6,10 +6,10 @@ import 'forge-std/Test.sol';
 import { MockERC20 } from './mocks/MockERC20.sol';
 
 // Custom
-import { Hashtag } from 'src/Hashtag.sol';
+import { Marketplace } from 'src/Marketplace.sol';
 import { MintableERC20 } from 'src/MintableERC20.sol';
 
-contract HashtagTest is Test {
+contract MarketplaceTest is Test {
 	// Events
 	event SetPayoutAddress(address payoutAddress);
 	event SetMetadataHash(string metadataHash);
@@ -20,7 +20,7 @@ contract HashtagTest is Test {
 
 	// Contracts
 	MockERC20 token;
-	Hashtag hashtag;
+	Marketplace marketplace;
 
 	MintableERC20 providerRep;
 	MintableERC20 seekerRep;
@@ -45,9 +45,9 @@ contract HashtagTest is Test {
 		seekerRep.init('SeekerRep', 'SWRS', maintainer);
 		providerRep.init('ProviderRep', 'SWRP', maintainer);
 
-		// Hashtag
-		hashtag = new Hashtag();
-		hashtag.init(
+		// Marketplace
+		marketplace = new Marketplace();
+		marketplace.init(
 			address(token),
 			'Marketplace',
 			50e16,
@@ -57,8 +57,8 @@ contract HashtagTest is Test {
 			providerRep
 		);
 
-		providerRep.setOwner(address(hashtag));
-		seekerRep.setOwner(address(hashtag));
+		providerRep.setOwner(address(marketplace));
+		seekerRep.setOwner(address(marketplace));
 
 		// Mint tokens
 		token.mint(seeker, 100e18);
@@ -67,11 +67,11 @@ contract HashtagTest is Test {
 	}
 
 	function testMetadata() public {
-		assertEq(hashtag.name(), 'Marketplace');
-		assertEq(hashtag.fee(), 50e16);
-		assertEq(address(hashtag.token()), address(token));
-		assertEq(hashtag.payoutAddress(), maintainer);
-		assertEq(hashtag.metadataHash(), 'SomeHash');
+		assertEq(marketplace.name(), 'Marketplace');
+		assertEq(marketplace.fee(), 50e16);
+		assertEq(address(marketplace.token()), address(token));
+		assertEq(marketplace.payoutAddress(), maintainer);
+		assertEq(marketplace.metadataHash(), 'SomeHash');
 		assertTrue(providerRep != ZERO_MINTABLE);
 		assertTrue(seekerRep != ZERO_MINTABLE);
 	}
@@ -82,9 +82,9 @@ contract HashtagTest is Test {
 		vm.expectEmit(true, true, false, false);
 		emit SetPayoutAddress(user);
 		vm.prank(maintainer);
-		hashtag.setPayoutAddress(user);
+		marketplace.setPayoutAddress(user);
 
-		assertEq(hashtag.payoutAddress(), user);
+		assertEq(marketplace.payoutAddress(), user);
 	}
 
 	function testCanChangeMetadataHash() public {
@@ -93,9 +93,9 @@ contract HashtagTest is Test {
 		vm.expectEmit(true, true, false, false);
 		emit SetMetadataHash(newHash);
 		vm.prank(maintainer);
-		hashtag.setMetadataHash(newHash);
+		marketplace.setMetadataHash(newHash);
 
-		assertEq(hashtag.metadataHash(), newHash);
+		assertEq(marketplace.metadataHash(), newHash);
 	}
 
 	function testCanChangeFee() public {
@@ -104,53 +104,53 @@ contract HashtagTest is Test {
 		vm.expectEmit(true, true, false, false);
 		emit SetFee(fee);
 		vm.prank(maintainer);
-		hashtag.setFee(fee);
+		marketplace.setFee(fee);
 
-		assertEq(hashtag.fee(), fee);
+		assertEq(marketplace.fee(), fee);
 	}
 
 	function testCanCreateItem() public {
 		vm.startPrank(seeker);
-		token.approve(address(hashtag), 10e18 + 25e16);
-		hashtag.newItem('ItemHash', 10e18, 'ItemMetadata');
+		token.approve(address(marketplace), 10e18 + 25e16);
+		marketplace.newItem('ItemHash', 10e18, 'ItemMetadata');
 
 		assertEq(token.balanceOf(seeker), 100e18 - 10e18 - 25e16);
 		assertEq(token.balanceOf(maintainer), 25e16);
-		assertEq(token.balanceOf(address(hashtag)), 10e18);
+		assertEq(token.balanceOf(address(marketplace)), 10e18);
 	}
 
 	function testCannotCreateSameItem() public {
 		vm.startPrank(seeker);
-		token.approve(address(hashtag), 10e18 + 2 * 25e16);
-		hashtag.newItem('ItemHash', 10e18, 'ItemMetadata');
+		token.approve(address(marketplace), 10e18 + 2 * 25e16);
+		marketplace.newItem('ItemHash', 10e18, 'ItemMetadata');
 
 		vm.expectRevert('ITEM_ALREADY_EXISTS');
-		hashtag.newItem('ItemHash', 15e18, 'OtherMetadata');
+		marketplace.newItem('ItemHash', 15e18, 'OtherMetadata');
 	}
 
 	function testCanFundItem() public {
 		// Create an item
 		vm.startPrank(seeker);
-		token.approve(address(hashtag), 10e18 + 25e16);
+		token.approve(address(marketplace), 10e18 + 25e16);
 
 		bytes memory key = 'ItemHash';
 		bytes32 id = keccak256(key);
 
-		hashtag.newItem(id, 10e18, 'ItemMetadata');
+		marketplace.newItem(id, 10e18, 'ItemMetadata');
 		vm.stopPrank();
 
 		// Fund the item
 		vm.startPrank(provider);
-		token.approve(address(hashtag), 10e18 + 25e16);
+		token.approve(address(marketplace), 10e18 + 25e16);
 
-		hashtag.fundItem(key);
+		marketplace.fundItem(key);
 	}
 
 	function testCannotFundInexistantItem() public {
 		vm.startPrank(provider);
-		token.approve(address(hashtag), 10e18 + 25e16);
+		token.approve(address(marketplace), 10e18 + 25e16);
 
 		vm.expectRevert('ITEM_NOT_OPEN');
-		hashtag.fundItem(bytes('ItemHash'));
+		marketplace.fundItem(bytes('ItemHash'));
 	}
 }

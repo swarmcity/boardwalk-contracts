@@ -6,15 +6,15 @@ import 'forge-std/Test.sol';
 import { Bytes32AddressLib } from 'solmate/utils/Bytes32AddressLib.sol';
 
 // Custom
-import { Hashtag } from 'src/Hashtag.sol';
-import { HashtagFactory } from 'src/HashtagFactory.sol';
+import { Marketplace } from 'src/Marketplace.sol';
+import { MarketplaceFactory } from 'src/MarketplaceFactory.sol';
 
 // Mocks
 import { MockERC20 } from './mocks/MockERC20.sol';
 
-contract HashtagFactoryTest is Test {
+contract MarketplaceFactoryTest is Test {
 	// Events
-	event HashtagCreated(
+	event MarketplaceCreated(
 		address indexed addr,
 		string name,
 		address seekerRep,
@@ -23,21 +23,21 @@ contract HashtagFactoryTest is Test {
 
 	// Contracts
 	MockERC20 token;
-	HashtagFactory factory;
+	MarketplaceFactory factory;
 
 	function setUp() public {
 		token = new MockERC20('FakeDAI', 'FDAI', 18);
-		factory = new HashtagFactory();
+		factory = new MarketplaceFactory();
 	}
 
-	function testCanCreateHashtag() public {
+	function testCanCreateMarketplace() public {
 		// Expect an event to be emitted
 		vm.expectEmit(false, true, true, false);
-		emit HashtagCreated(address(0), 'Settler', address(0), address(0));
+		emit MarketplaceCreated(address(0), 'Settler', address(0), address(0));
 
-		// Create the hashtag and record logs
+		// Create the marketplace and record logs
 		vm.recordLogs();
-		Hashtag hashtag = factory.create(
+		Marketplace marketplace = factory.create(
 			address(token),
 			'Settler',
 			500000000000000000,
@@ -52,7 +52,7 @@ contract HashtagFactoryTest is Test {
 		string memory name;
 
 		for (uint256 i = 0; i < logs.length; i++) {
-			if (logs[i].topics[0] == HashtagCreated.selector) {
+			if (logs[i].topics[0] == MarketplaceCreated.selector) {
 				emitted = Bytes32AddressLib.fromLast20Bytes(logs[i].topics[1]);
 				(name, seekerRep, providerRep) = abi.decode(
 					logs[i].data,
@@ -63,13 +63,13 @@ contract HashtagFactoryTest is Test {
 		}
 
 		// Check metadata
-		assertEq(address(hashtag.token()), address(token));
-		assertEq(hashtag.name(), 'Settler');
-		assertEq(hashtag.name(), name);
-		assertEq(hashtag.fee(), 500000000000000000);
-		assertEq(hashtag.owner(), address(this));
-		assertEq(address(hashtag), emitted);
-		assertEq(address(hashtag.seekerRep()), seekerRep);
-		assertEq(address(hashtag.providerRep()), providerRep);
+		assertEq(address(marketplace.token()), address(token));
+		assertEq(marketplace.name(), 'Settler');
+		assertEq(marketplace.name(), name);
+		assertEq(marketplace.fee(), 500000000000000000);
+		assertEq(marketplace.owner(), address(this));
+		assertEq(address(marketplace), emitted);
+		assertEq(address(marketplace.seekerRep()), seekerRep);
+		assertEq(address(marketplace.providerRep()), providerRep);
 	}
 }

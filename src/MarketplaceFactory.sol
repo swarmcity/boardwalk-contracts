@@ -5,22 +5,22 @@ pragma solidity ^0.8.15;
 import '@openzeppelin/contracts/proxy/Clones.sol';
 
 // Custom
-import { Hashtag } from './Hashtag.sol';
+import { Marketplace } from './Marketplace.sol';
 import { MintableERC20 } from './MintableERC20.sol';
 
-contract HashtagFactory {
-	event HashtagCreated(
+contract MarketplaceFactory {
+	event MarketplaceCreated(
 		address indexed addr,
 		string name,
 		address seekerRep,
 		address providerRep
 	);
 
-	address public masterHashtag;
+	address public masterMarketplace;
 	address public masterRep;
 
 	constructor() {
-		masterHashtag = address(new Hashtag());
+		masterMarketplace = address(new Marketplace());
 		masterRep = address(new MintableERC20(0));
 	}
 
@@ -29,7 +29,7 @@ contract HashtagFactory {
 		string memory name,
 		uint256 fee,
 		string memory metadata
-	) public returns (Hashtag hashtag) {
+	) public returns (Marketplace marketplace) {
 		/// @dev create the reputation tokens
 		MintableERC20 seekerRep = MintableERC20(Clones.clone(masterRep));
 		MintableERC20 providerRep = MintableERC20(Clones.clone(masterRep));
@@ -38,9 +38,9 @@ contract HashtagFactory {
 		seekerRep.init('SeekerRep', 'SWRS', msg.sender);
 		providerRep.init('ProviderRep', 'SWRP', msg.sender);
 
-		/// @dev create the hashtag
-		hashtag = Hashtag(Clones.clone(masterHashtag));
-		hashtag.init(
+		/// @dev create the marketplace
+		marketplace = Marketplace(Clones.clone(masterMarketplace));
+		marketplace.init(
 			token,
 			name,
 			fee,
@@ -50,9 +50,9 @@ contract HashtagFactory {
 			providerRep
 		);
 
-		/// @dev emit hashtag created event
-		emit HashtagCreated(
-			address(hashtag),
+		/// @dev emit marketplace created event
+		emit MarketplaceCreated(
+			address(marketplace),
 			name,
 			address(seekerRep),
 			address(providerRep)
