@@ -122,7 +122,7 @@ contract Marketplace is Auth {
 		token = ERC20(_token);
 		metadataHash = _metadataHash;
 		fee = _fee;
-		payoutAddress = msg.sender;
+		payoutAddress = _owner;
 
 		// Auth
 		owner = _owner;
