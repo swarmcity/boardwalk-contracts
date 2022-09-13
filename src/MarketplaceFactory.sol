@@ -35,8 +35,8 @@ contract MarketplaceFactory {
 		MintableERC20 providerRep = MintableERC20(Clones.clone(masterRep));
 
 		/// @dev initialize the tokens
-		seekerRep.init('SeekerRep', 'SWRS', msg.sender);
-		providerRep.init('ProviderRep', 'SWRP', msg.sender);
+		seekerRep.init('SeekerRep', 'SWRS', address(this));
+		providerRep.init('ProviderRep', 'SWRP', address(this));
 
 		/// @dev create the marketplace
 		marketplace = Marketplace(Clones.clone(masterMarketplace));
@@ -49,6 +49,10 @@ contract MarketplaceFactory {
 			seekerRep,
 			providerRep
 		);
+
+		/// @dev set marketplace as reputation token owner
+		seekerRep.setOwner(address(marketplace));
+		providerRep.setOwner(address(marketplace));
 
 		/// @dev emit marketplace created event
 		emit MarketplaceCreated(

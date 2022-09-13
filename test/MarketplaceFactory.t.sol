@@ -71,5 +71,9 @@ contract MarketplaceFactoryTest is Test {
 		assertEq(address(marketplace), emitted);
 		assertEq(address(marketplace.seekerRep()), seekerRep);
 		assertEq(address(marketplace.providerRep()), providerRep);
+
+		// Check reputation token owners
+		assertEq(marketplace.seekerRep().owner(), address(marketplace));
+		assertEq(marketplace.providerRep().owner(), address(marketplace));
 	}
 }
