@@ -65,7 +65,7 @@ contract Marketplace is Auth {
 		bytes32 metadata;
 	}
 
-	uint256 itemId = 1;
+	uint256 public itemId = 1;
 	mapping(uint256 => Item) public items;
 	mapping(bytes => bool) invalidatedSignatures;
 
