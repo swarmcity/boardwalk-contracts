@@ -27,9 +27,11 @@ contract DeployScript is Script {
 		MarketplaceList list = new MarketplaceList();
 		MarketplaceFactory factory = new MarketplaceFactory();
 
-		list.add(factory.create(address(token), '5 Min Tasks', 5e17, 'Hash'));
-		list.add(factory.create(address(token), 'Logos Tasks', 1e18, 'Hash'));
-		list.add(factory.create(address(token), 'Delivery', 25e17, 'Hash'));
+		list.add(factory.create(address(token), '5minTasks', 5e17, 'Hash'));
+		list.add(factory.create(address(token), 'Delivery', 1e18, 'Hash'));
+		list.add(factory.create(address(token), 'FixItForMe', 25e17, 'Hash'));
+		list.add(factory.create(address(token), 'LogosTasks', 25e17, 'Hash'));
+		factory.create(address(token), 'OneMoreThing', 25e17, 'Hash');
 
 		vm.stopBroadcast();
 	}
