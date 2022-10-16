@@ -75,7 +75,8 @@ contract Marketplace is Auth {
 		bytes32 metadata,
 		uint256 price,
 		uint256 fee,
-		uint256 seekerRep
+		uint256 seekerRep,
+		uint256 timestamp
 	);
 
 	/// @dev Event FundDeal - This event is fired when a deal is been funded by a party.
@@ -193,7 +194,7 @@ contract Marketplace is Auth {
 			_metadata
 		);
 
-		emit NewItem(msg.sender, id, _metadata, _price, fee, rep);
+		emit NewItem(msg.sender, id, _metadata, _price, fee, rep, block.timestamp);
 	}
 
 	/// @notice Provider has to fund the deal
