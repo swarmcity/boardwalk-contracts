@@ -65,7 +65,7 @@ contract Marketplace is Auth {
 		bytes32 metadata;
 	}
 
-	uint256 public itemId = 1;
+	uint256 public itemId;
 	mapping(uint256 => Item) public items;
 	mapping(bytes => bool) invalidatedSignatures;
 
@@ -114,6 +114,9 @@ contract Marketplace is Auth {
 	) public {
 		require(token == ERC20(address(0)), 'ALREADY_INITIALIZED');
 		require(_token != address(0), 'INVALID_TOKEN');
+
+		// Set first item id at 1
+		itemId = 1;
 
 		// Reputation tokens
 		seekerRep = _seekerRep;
