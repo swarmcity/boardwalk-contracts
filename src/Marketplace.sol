@@ -228,6 +228,7 @@ contract Marketplace is Auth {
 		item.status = Status.Funded;
 
 		emit FundItem(item.providerAddress, id);
+		emit ItemStatusChange(id, Status.Funded);
 	}
 
 	/// @notice The payout function can only be called by the deal owner.
