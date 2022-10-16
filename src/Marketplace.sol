@@ -67,6 +67,7 @@ contract Marketplace is Auth {
 
 	uint256 itemId = 1;
 	mapping(uint256 => Item) public items;
+	mapping(bytes => bool) invalidatedSignatures;
 
 	/// @dev Event NewDealForTwo - This event is fired when a new deal for two is created.
 	event NewItem(
@@ -197,6 +198,33 @@ contract Marketplace is Auth {
 		emit NewItem(msg.sender, id, _metadata, _price, fee, rep, block.timestamp);
 	}
 
+	function signatureKey(
+		uint8 v,
+		bytes32 r,
+		bytes32 s
+	) private pure returns (bytes memory signature) {
+		signature = new bytes(65);
+		assembly {
+			mstore(add(signature, 0x20), r)
+			mstore(add(signature, 0x40), s)
+			mstore8(add(signature, 0x60), v)
+		}
+	}
+
+	function invalidateSignature(
+		uint256 id,
+		address provider,
+		uint8 v,
+		bytes32 r,
+		bytes32 s
+	) public {
+		// Check the seeker's signature
+		verifyFundItemSignature(msg.sender, provider, id, v, r, s);
+
+		// Save it to storage
+		invalidatedSignatures[signatureKey(v, r, s)] = true;
+	}
+
 	/// @notice Provider has to fund the deal
 	function fundItem(
 		uint256 id,
@@ -205,6 +233,12 @@ contract Marketplace is Auth {
 		bytes32 s
 	) public {
 		Item storage item = items[id];
+
+		/// @dev make sure the signature wasn't invalidated
+		require(
+			!invalidatedSignatures[signatureKey(v, r, s)],
+			'SIGNATURE_INVALIDATED'
+		);
 
 		/// @dev only allow open deals to be funded
 		require(item.status == Status.Open, 'ITEM_NOT_OPEN');

@@ -184,6 +184,69 @@ contract MarketplaceTest is Test {
 		marketplace.fundItem(id, v, r, s);
 	}
 
+	function testCanInvalidateSignature() public {
+		// Create an item
+		vm.startPrank(seeker);
+		token.approve(address(marketplace), 10e18 + 25e16);
+
+		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
+
+		// Fund the item
+		token.approve(address(marketplace), 10e18 + 25e16);
+
+		(uint8 v, bytes32 r, bytes32 s) = vm.sign(
+			seekerPrivateKey,
+			getFundItemHash(id)
+		);
+		marketplace.invalidateSignature(id, provider, v, r, s);
+	}
+
+	function testCannotInvalidateSomeoneElsesSignature() public {
+		// Create an item
+		vm.startPrank(seeker);
+		token.approve(address(marketplace), 10e18 + 25e16);
+
+		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
+
+		// Fund the item
+		token.approve(address(marketplace), 10e18 + 25e16);
+
+		(uint8 v, bytes32 r, bytes32 s) = vm.sign(
+			seekerPrivateKey,
+			getFundItemHash(id)
+		);
+
+		vm.stopPrank();
+		vm.startPrank(provider);
+		vm.expectRevert('INVALID_SIGNER');
+		marketplace.invalidateSignature(id, provider, v, r, s);
+	}
+
+	function testCannotFundWithInvalidatedSignature() public {
+		// Create an item
+		vm.startPrank(seeker);
+		token.approve(address(marketplace), 10e18 + 25e16);
+
+		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
+
+		// Sign the meessage
+		(uint8 v, bytes32 r, bytes32 s) = vm.sign(
+			seekerPrivateKey,
+			getFundItemHash(id)
+		);
+
+		// Invalidate signature
+		marketplace.invalidateSignature(id, provider, v, r, s);
+		vm.stopPrank();
+
+		// Try to fund the item
+		vm.startPrank(provider);
+		token.approve(address(marketplace), 10e18 + 25e16);
+
+		vm.expectRevert('SIGNATURE_INVALIDATED');
+		marketplace.fundItem(id, v, r, s);
+	}
+
 	// Private
 	function getFundItemHash(uint256 item) public view returns (bytes32) {
 		return
