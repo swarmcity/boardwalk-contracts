@@ -8,5 +8,8 @@ forge script \
   --private-key $PRIVATE_KEY \
   --broadcast \
   --verify \
+  --legacy \
   --etherscan-api-key $ETHERSCAN_KEY \
+  --verifier etherscan \
+  --verifier-url "https://zkevm.polygonscan.com/" \
   -vvvv

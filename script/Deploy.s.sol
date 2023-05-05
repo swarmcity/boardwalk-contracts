@@ -10,7 +10,7 @@ import { MintableERC20 } from 'src/MintableERC20.sol';
 contract DeployScript is Script {
 	address owner;
 	MintableERC20 token =
-		MintableERC20(address(0x1209b3001b01eDcC7bC59588D6eef6BcF1030C7e));
+		MintableERC20(0xC5015b9d9161Dca7e18e32f6f25C4aD850731Fd4);
 
 	function setUp() public {
 		owner = msg.sender;
@@ -27,11 +27,7 @@ contract DeployScript is Script {
 		MarketplaceList list = new MarketplaceList();
 		MarketplaceFactory factory = new MarketplaceFactory();
 
-		list.add(factory.create(address(token), '5minTasks', 5e17, 'Hash'));
-		list.add(factory.create(address(token), 'Delivery', 1e18, 'Hash'));
-		list.add(factory.create(address(token), 'FixItForMe', 25e17, 'Hash'));
 		list.add(factory.create(address(token), 'LogosTasks', 25e17, 'Hash'));
-		factory.create(address(token), 'OneMoreThing', 25e17, 'Hash');
 
 		vm.stopBroadcast();
 	}
