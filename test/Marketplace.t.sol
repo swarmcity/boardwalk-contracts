@@ -61,8 +61,8 @@ contract MarketplaceTest is Test {
 			providerRep
 		);
 
-		providerRep.setOwner(address(marketplace));
-		seekerRep.setOwner(address(marketplace));
+		providerRep.transferOwnership(address(marketplace));
+		seekerRep.transferOwnership(address(marketplace));
 
 		// Mint tokens
 		token.mint(seeker, 100e18);

@@ -51,8 +51,8 @@ contract MarketplaceFactory {
 		);
 
 		/// @dev set marketplace as reputation token owner
-		seekerRep.setOwner(address(marketplace));
-		providerRep.setOwner(address(marketplace));
+		seekerRep.transferOwnership(address(marketplace));
+		providerRep.transferOwnership(address(marketplace));
 
 		/// @dev emit marketplace created event
 		emit MarketplaceCreated(
