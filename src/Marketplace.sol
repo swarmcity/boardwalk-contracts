@@ -45,6 +45,7 @@ contract Marketplace is Auth {
 	MintableERC20 public seekerRep;
 	address public payoutAddress;
 	string public metadataHash;
+	bool initialized = false;
 
 	/// @param dealStruct The deal object.
 	/// @param status Coming from Status enum.
@@ -112,8 +113,10 @@ contract Marketplace is Auth {
 		MintableERC20 _seekerRep,
 		MintableERC20 _providerRep
 	) public {
-		require(token == ERC20(address(0)), 'ALREADY_INITIALIZED');
-		require(_token != address(0), 'INVALID_TOKEN');
+		require(!initialized, 'ALREADY_INITIALIZED');
+
+		// Prevent re-initialization
+		initialized = true;
 
 		// Set first item id at 1
 		itemId = 1;
@@ -160,28 +163,25 @@ contract Marketplace is Auth {
 	/// @notice The create item function
 	function newItem(uint256 _price, bytes32 _metadata)
 		public
+		payable
+		tokenPayable
 		returns (uint256 id)
 	{
 		unchecked {
 			id = itemId++;
 		}
 
-		// fund this deal
-		uint256 totalValue = _price + fee / 2;
-
 		// if deal already exists don't allow to overwrite it
 		require(items[id].status == Status.None, 'ITEM_ALREADY_EXISTS');
 
-		// @dev The Seeker transfers SWT to the marketplacecontract
-		SafeTransferLib.safeTransferFrom(
-			token,
-			msg.sender,
-			address(this),
-			totalValue
-		);
+		// fund this deal
+		uint256 totalValue = _price + fee / 2;
+
+		// @dev The Seeker transfers SWT to the marketplace contract
+		transferFromSender(address(this), totalValue);
 
 		// @dev The Seeker pays half of the fee to the Maintainer
-		SafeTransferLib.safeTransfer(token, payoutAddress, fee / 2);
+		transfer(payoutAddress, fee / 2);
 
 		// Seeker rep (cache to save an external call)
 		uint256 rep = seekerRep.balanceOf(msg.sender);
@@ -234,7 +234,7 @@ contract Marketplace is Auth {
 		uint8 v,
 		bytes32 r,
 		bytes32 s
-	) public {
+	) public payable tokenPayable {
 		Item storage item = items[id];
 
 		/// @dev make sure the signature wasn't invalidated
@@ -250,15 +250,11 @@ contract Marketplace is Auth {
 		verifyFundItemSignature(item.seekerAddress, msg.sender, id, v, r, s);
 
 		/// @dev put the tokens from the provider on the deal
-		SafeTransferLib.safeTransferFrom(
-			token,
-			msg.sender,
-			address(this),
-			item.price + item.fee / 2
-		);
+		uint256 totalValue = item.price + item.fee / 2;
+		transferFromSender(address(this), totalValue);
 
 		// @dev The Seeker pays half of the fee to the Maintainer
-		SafeTransferLib.safeTransfer(token, payoutAddress, item.fee / 2);
+		transfer(payoutAddress, item.fee / 2);
 
 		/// @dev fill in the address of the provider (to payout the deal later on)
 		item.providerAddress = msg.sender;
@@ -280,7 +276,7 @@ contract Marketplace is Auth {
 		require(item.status == Status.Funded, 'DEAL_NOT_FUNDED');
 
 		/// @dev pay out the provider
-		SafeTransferLib.safeTransfer(token, item.providerAddress, item.price * 2);
+		transfer(item.providerAddress, item.price * 2);
 
 		/// @dev mint REP for Provider
 		providerRep.mint(item.providerAddress, 5);
@@ -300,7 +296,7 @@ contract Marketplace is Auth {
 		require(item.status == Status.Open, 'DEAL_NOT_OPEN');
 		require(item.seekerAddress == msg.sender, 'UNAUTHORIZED');
 
-		SafeTransferLib.safeTransfer(token, item.seekerAddress, item.price);
+		transfer(item.seekerAddress, item.price);
 
 		item.status = Status.Cancelled;
 		emit ItemStatusChange(_id, Status.Cancelled);
@@ -328,12 +324,8 @@ contract Marketplace is Auth {
 		require(msg.sender == payoutAddress, 'UNAUTHORIZED');
 		require(item.status == Status.Disputed, 'DEAL_NOT_DISPUTED');
 
-		SafeTransferLib.safeTransfer(token, item.seekerAddress, _seekerFraction);
-		SafeTransferLib.safeTransfer(
-			token,
-			item.providerAddress,
-			item.price * 2 - _seekerFraction
-		);
+		transfer(item.seekerAddress, _seekerFraction);
+		transfer(item.providerAddress, item.price * 2 - _seekerFraction);
 
 		item.status = Status.Resolved;
 		emit ItemStatusChange(_id, Status.Resolved);
@@ -399,5 +391,29 @@ contract Marketplace is Auth {
 		);
 
 		require(recoveredAddress == seeker, 'INVALID_SIGNER');
+	}
+
+	function transfer(address to, uint256 amount) private {
+		if (token == ERC20(address(0))) {
+			SafeTransferLib.safeTransferETH(to, amount);
+		} else {
+			SafeTransferLib.safeTransfer(token, to, amount);
+		}
+	}
+
+	/// @dev this can only be used once per function with the total msg.value amount
+	function transferFromSender(address to, uint256 amount) private {
+		if (token == ERC20(address(0))) {
+			require(msg.value == amount, 'WRONG_VALUE');
+		} else {
+			SafeTransferLib.safeTransferFrom(token, msg.sender, to, amount);
+		}
+	}
+
+	modifier tokenPayable() {
+		if (token != ERC20(address(0))) {
+			require(msg.value == 0, 'VALUE_NOT_ZERO');
+		}
+		_;
 	}
 }
