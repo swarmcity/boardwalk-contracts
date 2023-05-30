@@ -59,6 +59,7 @@ contract Marketplace is Auth {
 		Status status;
 		uint256 fee;
 		uint256 price;
+		uint256 deposit;
 		uint256 providerRep;
 		uint256 seekerRep;
 		address providerAddress;
@@ -76,6 +77,7 @@ contract Marketplace is Auth {
 		uint256 indexed id,
 		bytes32 metadata,
 		uint256 price,
+		uint256 deposit,
 		uint256 fee,
 		uint256 seekerRep,
 		uint256 timestamp
@@ -161,12 +163,11 @@ contract Marketplace is Auth {
 	/// @notice The item making stuff
 
 	/// @notice The create item function
-	function newItem(uint256 _price, bytes32 _metadata)
-		public
-		payable
-		tokenPayable
-		returns (uint256 id)
-	{
+	function newItem(
+		uint256 _price,
+		uint256 _deposit,
+		bytes32 _metadata
+	) public payable tokenPayable returns (uint256 id) {
 		unchecked {
 			id = itemId++;
 		}
@@ -191,6 +192,7 @@ contract Marketplace is Auth {
 			Status.Open,
 			fee,
 			_price,
+			_deposit,
 			0,
 			rep,
 			address(0),
@@ -198,7 +200,16 @@ contract Marketplace is Auth {
 			_metadata
 		);
 
-		emit NewItem(msg.sender, id, _metadata, _price, fee, rep, block.timestamp);
+		emit NewItem(
+			msg.sender,
+			id,
+			_metadata,
+			_price,
+			_deposit,
+			fee,
+			rep,
+			block.timestamp
+		);
 	}
 
 	function signatureKey(
@@ -250,7 +261,7 @@ contract Marketplace is Auth {
 		verifyFundItemSignature(item.seekerAddress, msg.sender, id, v, r, s);
 
 		/// @dev put the tokens from the provider on the deal
-		uint256 totalValue = item.price + item.fee / 2;
+		uint256 totalValue = item.deposit + item.fee / 2;
 		transferFromSender(address(this), totalValue);
 
 		// @dev The Seeker pays half of the fee to the Maintainer
@@ -276,7 +287,7 @@ contract Marketplace is Auth {
 		require(item.status == Status.Funded, 'DEAL_NOT_FUNDED');
 
 		/// @dev pay out the provider
-		transfer(item.providerAddress, item.price * 2);
+		transfer(item.providerAddress, item.price + item.deposit);
 
 		/// @dev mint REP for Provider
 		providerRep.mint(item.providerAddress, 5);
@@ -319,13 +330,13 @@ contract Marketplace is Auth {
 
 	/// @notice The Resolve Item Function ♡
 	/// @notice The Maintainer resolves the disputed item.
-	function resolveItem(uint256 _id, uint256 _seekerFraction) public {
+	function resolveItem(uint256 _id, uint256 _seekerAmount) public {
 		Item storage item = items[_id];
 		require(msg.sender == payoutAddress, 'UNAUTHORIZED');
 		require(item.status == Status.Disputed, 'DEAL_NOT_DISPUTED');
 
-		transfer(item.seekerAddress, _seekerFraction);
-		transfer(item.providerAddress, item.price * 2 - _seekerFraction);
+		transfer(item.seekerAddress, _seekerAmount);
+		transfer(item.providerAddress, item.price + item.deposit - _seekerAmount);
 
 		item.status = Status.Resolved;
 		emit ItemStatusChange(_id, Status.Resolved);

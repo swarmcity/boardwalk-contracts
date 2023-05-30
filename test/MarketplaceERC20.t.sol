@@ -73,7 +73,7 @@ contract MarketplaceERC20Test is Test {
 	function testCanCreateItem() public {
 		vm.startPrank(seeker);
 		token.approve(address(marketplace), 10e18 + 25e16);
-		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
+		uint256 id = marketplace.newItem(10e18, 5e18, 'ItemMetadata');
 
 		assertEq(id, 1);
 		assertEq(token.balanceOf(seeker), 100e18 - 10e18 - 25e16);
@@ -87,14 +87,14 @@ contract MarketplaceERC20Test is Test {
 
 		vm.deal(seeker, 1);
 		vm.expectRevert('VALUE_NOT_ZERO');
-		marketplace.newItem{ value: 1 }(10e18, 'ItemMetadata');
+		marketplace.newItem{ value: 1 }(10e18, 5e18, 'ItemMetadata');
 	}
 
 	function testCanCreateMultipleItems() public {
 		vm.startPrank(seeker);
 		token.approve(address(marketplace), 1000e18);
-		assertEq(marketplace.newItem(10e18, 'ItemMetadata'), 1);
-		assertEq(marketplace.newItem(10e18, 'ItemMetadata'), 2);
+		assertEq(marketplace.newItem(10e18, 5e18, 'ItemMetadata'), 1);
+		assertEq(marketplace.newItem(10e18, 5e18, 'ItemMetadata'), 2);
 	}
 
 	function testCanFundItem() public {
@@ -102,7 +102,7 @@ contract MarketplaceERC20Test is Test {
 		vm.startPrank(seeker);
 		token.approve(address(marketplace), 10e18 + 25e16);
 
-		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
+		uint256 id = marketplace.newItem(10e18, 5e18, 'ItemMetadata');
 		vm.stopPrank();
 
 		// Fund the item
@@ -114,6 +114,12 @@ contract MarketplaceERC20Test is Test {
 			getFundItemHash(id)
 		);
 		marketplace.fundItem(id, v, r, s);
+
+		// Check balances
+		assertEq(token.balanceOf(seeker), 100e18 - 10e18 - 25e16);
+		assertEq(token.balanceOf(provider), 100e18 - 5e18 - 25e16);
+		assertEq(token.balanceOf(maintainer), 50e16);
+		assertEq(token.balanceOf(address(marketplace)), 15e18);
 	}
 
 	function testCannotFundInexistantItem() public {
@@ -129,7 +135,7 @@ contract MarketplaceERC20Test is Test {
 		vm.startPrank(seeker);
 		token.approve(address(marketplace), 10e18 + 25e16);
 
-		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
+		uint256 id = marketplace.newItem(10e18, 5e18, 'ItemMetadata');
 		vm.stopPrank();
 
 		// Fund the item
@@ -151,7 +157,7 @@ contract MarketplaceERC20Test is Test {
 		vm.startPrank(seeker);
 		token.approve(address(marketplace), 10e18 + 25e16);
 
-		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
+		uint256 id = marketplace.newItem(10e18, 5e18, 'ItemMetadata');
 		vm.stopPrank();
 
 		// Fund the item
@@ -177,7 +183,7 @@ contract MarketplaceERC20Test is Test {
 		vm.startPrank(seeker);
 		token.approve(address(marketplace), 10e18 + 25e16);
 
-		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
+		uint256 id = marketplace.newItem(10e18, 5e18, 'ItemMetadata');
 
 		// Fund the item
 		token.approve(address(marketplace), 10e18 + 25e16);
@@ -194,7 +200,7 @@ contract MarketplaceERC20Test is Test {
 		vm.startPrank(seeker);
 		token.approve(address(marketplace), 10e18 + 25e16);
 
-		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
+		uint256 id = marketplace.newItem(10e18, 5e18, 'ItemMetadata');
 
 		// Fund the item
 		token.approve(address(marketplace), 10e18 + 25e16);
@@ -215,7 +221,7 @@ contract MarketplaceERC20Test is Test {
 		vm.startPrank(seeker);
 		token.approve(address(marketplace), 10e18 + 25e16);
 
-		uint256 id = marketplace.newItem(10e18, 'ItemMetadata');
+		uint256 id = marketplace.newItem(10e18, 5e18, 'ItemMetadata');
 
 		// Sign the meessage
 		(uint8 v, bytes32 r, bytes32 s) = vm.sign(

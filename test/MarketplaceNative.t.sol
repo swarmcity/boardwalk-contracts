@@ -70,6 +70,7 @@ contract MarketplaceNativeTest is Test {
 		vm.startPrank(seeker);
 		uint256 id = marketplace.newItem{ value: 10e18 + 25e16 }(
 			10e18,
+			5e18,
 			'ItemMetadata'
 		);
 
@@ -82,11 +83,11 @@ contract MarketplaceNativeTest is Test {
 	function testCanCreateMultipleItems() public {
 		vm.startPrank(seeker);
 		assertEq(
-			marketplace.newItem{ value: 10e18 + 25e16 }(10e18, 'ItemMetadata'),
+			marketplace.newItem{ value: 10e18 + 25e16 }(10e18, 5e18, 'ItemMetadata'),
 			1
 		);
 		assertEq(
-			marketplace.newItem{ value: 10e18 + 25e16 }(10e18, 'ItemMetadata'),
+			marketplace.newItem{ value: 10e18 + 25e16 }(10e18, 5e18, 'ItemMetadata'),
 			2
 		);
 	}
@@ -96,11 +97,19 @@ contract MarketplaceNativeTest is Test {
 
 		// Too little
 		vm.expectRevert('WRONG_VALUE');
-		marketplace.newItem{ value: 10e18 + 25e16 - 1 }(10e18, 'ItemMetadata');
+		marketplace.newItem{ value: 10e18 + 25e16 - 1 }(
+			10e18,
+			5e18,
+			'ItemMetadata'
+		);
 
 		// Too much
 		vm.expectRevert('WRONG_VALUE');
-		marketplace.newItem{ value: 10e18 + 25e16 + 1 }(10e18, 'ItemMetadata');
+		marketplace.newItem{ value: 10e18 + 25e16 + 1 }(
+			10e18,
+			5e18,
+			'ItemMetadata'
+		);
 	}
 
 	function testCanFundItem() public {
@@ -109,6 +118,7 @@ contract MarketplaceNativeTest is Test {
 
 		uint256 id = marketplace.newItem{ value: 10e18 + 25e16 }(
 			10e18,
+			5e18,
 			'ItemMetadata'
 		);
 		vm.stopPrank();
@@ -120,7 +130,13 @@ contract MarketplaceNativeTest is Test {
 			seekerPrivateKey,
 			getFundItemHash(id)
 		);
-		marketplace.fundItem{ value: 10e18 + 25e16 }(id, v, r, s);
+		marketplace.fundItem{ value: 5e18 + 25e16 }(id, v, r, s);
+
+		// Check balances
+		assertEq(seeker.balance, 100e18 - 10e18 - 25e16);
+		assertEq(provider.balance, 100e18 - 5e18 - 25e16);
+		assertEq(maintainer.balance, 50e16);
+		assertEq(address(marketplace).balance, 15e18);
 	}
 
 	function testCannotFundInexistantItem() public {
@@ -134,6 +150,7 @@ contract MarketplaceNativeTest is Test {
 		vm.startPrank(seeker);
 		uint256 id = marketplace.newItem{ value: 10e18 + 25e16 }(
 			10e18,
+			5e18,
 			'ItemMetadata'
 		);
 		vm.stopPrank();
@@ -161,6 +178,7 @@ contract MarketplaceNativeTest is Test {
 
 		uint256 id = marketplace.newItem{ value: 10e18 + 25e16 }(
 			10e18,
+			5e18,
 			'ItemMetadata'
 		);
 		vm.stopPrank();
@@ -187,6 +205,7 @@ contract MarketplaceNativeTest is Test {
 		vm.startPrank(seeker);
 		uint256 id = marketplace.newItem{ value: 10e18 + 25e16 }(
 			10e18,
+			5e18,
 			'ItemMetadata'
 		);
 
@@ -203,6 +222,7 @@ contract MarketplaceNativeTest is Test {
 		vm.startPrank(seeker);
 		uint256 id = marketplace.newItem{ value: 10e18 + 25e16 }(
 			10e18,
+			5e18,
 			'ItemMetadata'
 		);
 
@@ -223,6 +243,7 @@ contract MarketplaceNativeTest is Test {
 		vm.startPrank(seeker);
 		uint256 id = marketplace.newItem{ value: 10e18 + 25e16 }(
 			10e18,
+			5e18,
 			'ItemMetadata'
 		);
 
