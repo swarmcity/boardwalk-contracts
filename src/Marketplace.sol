@@ -45,7 +45,7 @@ contract Marketplace is Auth {
 	MintableERC20 public seekerRep;
 	address public payoutAddress;
 	string public metadataHash;
-	bool initialized = false;
+	bool public initialized = false;
 
 	/// @param dealStruct The deal object.
 	/// @param status Coming from Status enum.

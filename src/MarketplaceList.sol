@@ -16,7 +16,7 @@ contract MarketplaceList is Auth {
 	constructor() Auth(msg.sender, Authority(address(0))) {}
 
 	function add(Marketplace marketplace) public requiresAuth {
-		require(address(marketplace.token()) != address(0), 'UNINITIALIZED');
+		require(marketplace.initialized() == true, 'UNINITIALIZED');
 		marketplaces.push(marketplace);
 		emit MarketplaceAdded(marketplace, marketplace.name());
 	}
